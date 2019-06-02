@@ -26,7 +26,7 @@ if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" 2>/dev/null
   echo "creating the main CloudFormation stack for ${DEFAULT_REGION}"
   aws cloudformation create-stack \
     --stack-name "${STACK_NAME}" \
-    --template-body file://cloudformation.yaml \
+    --template-body file://cloudformation-vpc-main.yaml \
     --capabilities CAPABILITY_NAMED_IAM \
     --parameters ParameterKey=SSHLocation,ParameterValue="${SSH_LOCATION}" \
                  ParameterKey=AWSAccountId,ParameterValue="${AWS_ACCOUNT_ID}" \
@@ -47,14 +47,13 @@ do
       echo "Creating a CloudFormation stack=${STACK_NAME} for region=${region}"
       aws cloudformation create-stack \
         --stack-name "${STACK_NAME}" \
-        --template-body file://cloudformation.yaml \
+        --template-body file://cloudformation-vpc-sub.yaml \
         --capabilities CAPABILITY_NAMED_IAM \
         --parameters ParameterKey=SSHLocation,ParameterValue="${SSH_LOCATION}" \
                      ParameterKey=AWSAccountIdForMainVPC,ParameterValue="${AWS_ACCOUNT_ID}" \
                      ParameterKey=PeerVpcId,ParameterValue="${MAIN_VPC_ID}" \
                      ParameterKey=PeerRoleArn,ParameterValue="${PEER_ROLE_ARN}" \
                      ParameterKey=PeerRegion,ParameterValue="${DEFAULT_REGION}" \
-                     ParameterKey=EC2InstanceType,ParameterValue="${EC2_INSTANCE_TYPE}" \
         --region "${region}" \
         --output text
     fi
