@@ -226,3 +226,11 @@ Outputs:
     Value: !Ref RouteTable
     Export:
       Name: !Sub "${AWS::StackName}-RouteTable"
+  SecurityGroup:
+    Value: !Ref SecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-SecurityGroup"
+  Subnet:
+    Value: !Ref SubnetInAZ1
+    Export:
+      Name: !Sub "${AWS::StackName}-Subnet"

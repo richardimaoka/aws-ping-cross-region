@@ -1,27 +1,13 @@
 #!/bin/sh
 
-# parse options
-MULTI_REGION="true"
-EC2_INSTANCE_TYPE="t2.micro"
-for OPT in "$@"
-do
-    case "$OPT" in
-      '--instance-type' )
-        if [ -z "$2" ]; then
-          echo "option --instance-type requires an argument -- $1" 1>&2
-          exit 1
-        fi
-        EC2_INSTANCE_TYPE="$2"
-        shift 2
-        ;;
-    esac
-done
-
 AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)" \
 SSH_LOCATION="$(curl ifconfig.co 2> /dev/null)/32"
 STACK_NAME="PingCrossRegionExperiment"
 DEFAULT_REGION=$(aws configure get region)
 
+################################
+# Step 1: Create the main VPC
+################################
 if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" 2>/dev/null ; then
   echo "creating the main CloudFormation stack for ${DEFAULT_REGION}"
   aws cloudformation create-stack \
@@ -40,6 +26,9 @@ MAIN_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --
 PEER_ROLE_ARN=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='PeerRoleArn'].OutputValue" --output text)
 MAIN_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text)
 
+################################
+# Step 2: Create the sub VPCs
+################################
 for region in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do 
   if [ "${region}" != "${DEFAULT_REGION}" ]; then
@@ -60,6 +49,9 @@ do
   fi
 done 
 
+#########################################
+# Step 3: Update main VPC's route table
+##########################################
 for region in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do 
   if [ "${region}" != "${DEFAULT_REGION}" ]; then
