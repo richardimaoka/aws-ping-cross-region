@@ -38,16 +38,16 @@ if [ -n "${CURRENT_REGION}" ]; then
   echo "s3://${S3_BUCKET_NAME}/${FILE_NAME}" | tee /tmp/"${FILE_NAME}"
   echo "https://s3.console.aws.amazon.com/s3/object/${S3_BUCKET_NAME}/${FILE_NAME}" | tee -a /tmp/"${FILE_NAME}"
 
-  for region in $(aws ec2 describe-regions --query "Regions[].RegionName" --region "${CURRENT_REGION}" | jq -r '.[]')
+  for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" --region "${CURRENT_REGION}" | jq -r '.[]')
   do
     echo "------------------------------------------------------------" >> /tmp/"${FILE_NAME}"
-    echo "Ping experiment for ${region}" >> /tmp/"${FILE_NAME}"
+    echo "Ping experiment for ${REGION}" >> /tmp/"${FILE_NAME}"
     echo "------------------------------------------------------------" >> /tmp/"${FILE_NAME}"
 
     EC2_INSTANCES=$(aws ec2 describe-instances \
       --filters "Name=tag:aws:cloudformation:stack-name,Values=${STACK_NAME}" \
       --query "Reservations[].Instances[]" \
-      --region "${region}"
+      --region "${REGION}"
     )
 
     for instance in $(echo "${EC2_INSTANCES}" | jq -c '.[]')
