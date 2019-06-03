@@ -216,12 +216,6 @@ Outputs:
       - Arn
     Export:
       Name: !Sub "${AWS::StackName}-PeerRoleArn"      
-  VPCCidrBlock:
-    Value: !GetAtt 
-      - VPC
-      - CidrBlock
-    Export:
-      Name: !Sub "${AWS::StackName}-VPCCidrBlock"      
   RouteTable:
     Value: !Ref RouteTable
     Export:
@@ -237,7 +231,7 @@ Outputs:
   SubnetCidrFirstTwoOctets:
     Value:
       !Sub
-      - "${RegionSubnet}.0"
+      - "${RegionSubnet}"
       - { RegionSubnet: !FindInMap [RegionMap, Ref: "AWS::Region", RegionSubnet] }            
     Export:
       Name: !Sub "${AWS::StackName}-Subnet-Cidr-First-Two-Octets"

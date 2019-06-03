@@ -17,7 +17,6 @@ do
     esac
 done
 
-
 ############################
 # Create a json file
 ############################
@@ -33,9 +32,10 @@ do
     --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" \
     --output text
   )
-  SECURITY_GROUP_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='SecurityGroup'].OutputValue" --output text --region "${REGION}")
-  SUBNET_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='Subnet'].OutputValue" --output text --region "${REGION}")
-  SUBNET_CIDR_FIRST_TWO_OCTETS=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='SubnetCidrFirstTwoOctets'].OutputValue" --output text --region "${REGION}")
+  OUTPUTS=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" -region "${REGION}")
+  SECURITY_GROUP_ID=$(echo ${OUTPUTS} | jq -r '.[] | select(.OutputKey=="SecurityGroup")')
+  SUBNET_ID=$(echo ${OUTPUTS} | jq -r '.[] | select(.OutputKey=="Subnet")')
+  SUBNET_CIDR_FIRST_TWO_OCTETS=$(echo ${OUTPUTS} | jq -r '.[] | select(.OutputKey=="SubnetCidrFirstTwoOctets")')
  
   echo "\"${REGION}\": {"
   echo "  \"instance_type\": \"${EC2_INSTANCE_TYPE}\","
