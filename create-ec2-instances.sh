@@ -32,7 +32,7 @@ do
     --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" \
     --output text
   )
-  OUTPUTS=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}")
+  OUTPUTS=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" --query "Stacks[].Outputs")
   SECURITY_GROUP_ID=$(echo ${OUTPUTS} | jq -r '.[] | select(.OutputKey=="SecurityGroup")')
   SUBNET_ID=$(echo ${OUTPUTS} | jq -r '.[] | select(.OutputKey=="Subnet")')
   SUBNET_CIDR_FIRST_TWO_OCTETS=$(echo ${OUTPUTS} | jq -r '.[] | select(.OutputKey=="SubnetCidrFirstTwoOctets")')
