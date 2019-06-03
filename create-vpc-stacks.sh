@@ -8,8 +8,8 @@ DEFAULT_REGION=$(aws configure get region)
 ################################
 # Step 1: Create the main VPC
 ################################
-if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" 2>/dev/null ; then
-  echo "creating the main CloudFormation stack for ${DEFAULT_REGION}"
+if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" > /dev/null 2>&1; then
+  echo "creating the main CloudFormation stack in ${DEFAULT_REGION}"
   aws cloudformation create-stack \
     --stack-name "${STACK_NAME}" \
     --template-body file://cloudformation-vpc-main.yaml \
@@ -17,6 +17,8 @@ if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" 2>/dev/null
     --parameters ParameterKey=SSHLocation,ParameterValue="${SSH_LOCATION}" \
                  ParameterKey=AWSAccountId,ParameterValue="${AWS_ACCOUNT_ID}" \
     --output text
+else
+  echo "Cloudformatoin stack in ${DEFAULT_REGION} already exists"
 fi
 
 echo "Waiting until the Cloudformation VPC main stack is CREATE_COMPLETE in ${DEFAULT_REGION}"
@@ -29,11 +31,11 @@ MAIN_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME
 ################################
 # Step 2: Create the sub VPCs
 ################################
-for region in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
+for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do 
-  if [ "${region}" != "${DEFAULT_REGION}" ]; then
-    if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${region}" 2> /dev/null; then
-      echo "Creating a CloudFormation stack=${STACK_NAME} for region=${region}"
+  if [ "${REGION}" != "${DEFAULT_REGION}" ]; then
+    if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" > /dev/null 2>&1; then
+      echo "Creating a CloudFormation stack=${STACK_NAME} for region=${REGION}"
       aws cloudformation create-stack \
         --stack-name "${STACK_NAME}" \
         --template-body file://cloudformation-vpc-sub.yaml \
@@ -43,8 +45,10 @@ do
                      ParameterKey=PeerVpcId,ParameterValue="${MAIN_VPC_ID}" \
                      ParameterKey=PeerRoleArn,ParameterValue="${PEER_ROLE_ARN}" \
                      ParameterKey=PeerRegion,ParameterValue="${DEFAULT_REGION}" \
-        --region "${region}" \
+        --region "${REGION}" \
         --output text
+    else
+      echo "Cloudformatoin stack in ${REGION} already exists"
     fi
   fi
 done 
@@ -52,16 +56,16 @@ done
 #########################################
 # Step 3: Update main VPC's route table
 ##########################################
-for region in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
+for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do 
-  if [ "${region}" != "${DEFAULT_REGION}" ]; then
-    echo "Waiting until the Cloudformation stack is CREATE_COMPLETE for ${region}"
-    if aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME}" --region "${region}"; then
+  if [ "${REGION}" != "${DEFAULT_REGION}" ]; then
+    echo "Waiting until the Cloudformation stack is CREATE_COMPLETE for ${REGION}"
+    if aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME}" --region "${REGION}"; then
       # Doing this in the shell script, because doing the same in CloudFormation is pretty
       # tediuos as described in README.md, so doing it in AWS CLI
       echo "Adding VPC peering route to the route table of the main VPC"
-      VPC_PEERING_CONNECTION=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCPeeringConnection'].OutputValue" --output text --region "${region}")
-      VPC_CIDR_BLOCK=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCCidrBlock'].OutputValue" --output text --region "${region}")
+      VPC_PEERING_CONNECTION=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCPeeringConnection'].OutputValue" --output text --region "${REGION}")
+      VPC_CIDR_BLOCK=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCCidrBlock'].OutputValue" --output text --region "${REGION}")
       aws ec2 create-route \
         --route-table-id "${MAIN_ROUTE_TABLE}" \
         --destination-cidr-block "${VPC_CIDR_BLOCK}" \
