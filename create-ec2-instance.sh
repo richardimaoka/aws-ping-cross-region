@@ -83,15 +83,6 @@ TARGET_OUTPUTS=$(aws ec2 run-instances \
   --region "${TARGET_REGION}"
 )
 
-if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" ; then
-  >&2 echo "ERROR: failed to wait on the source EC2 instance = ${SOURCE_INSTANCE_ID}"
-  exit 1
-fi
-if ! aws ec2 wait instance-status-ok --instance-ids "${TARGET_INSTANCE_ID}" ; then
-  >&2 echo "ERROR: failed to wait on the target EC2 instance = ${TARGET_INSTANCE_ID}"
-  exit
-fi
-
 SOURCE_INSTANCE_ID=$(echo "${SOURCE_OUTPUTS}" | jq -r ".Instances[].InstanceId")
 SOURCE_PRIVATE_IP=$(echo "${SOURCE_OUTPUTS}" | jq -r ".Instances[].NetworkInterfaces[].PrivateIpAddress")
 TARGET_INSTANCE_ID=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].InstanceId")
