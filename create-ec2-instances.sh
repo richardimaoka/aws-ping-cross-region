@@ -1,67 +1,59 @@
 #!/bin/sh
 
-# parse options
-EC2_INSTANCE_TYPE="t2.micro"
-STACK_NAME="PingCrossRegionExperiment"
-for OPT in "$@"
+read INPUT
+
+TEST_EXECUTION_UUID=$(uuidgen)
+
+for SOURCE_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
 do
-    case "$OPT" in
-      '--instance-type' )
-        if [ -z "$2" ]; then
-          echo "option --instance-type requires an argument -- $1" 1>&2
-          exit 1
-        fi
-        EC2_INSTANCE_TYPE="$2"
-        shift 2
-        ;;
-    esac
+  for TARGET_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
+  
+    SOURCE_INSTANCE_TYPE=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".instance_type")
+    SOURCE_IMAGE_ID=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".image_id")
+    SOURCE_SECURITY_GROUP_ID=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".security_group")
+    SOURCE_SUBNET_ID=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".subnet_id")
+    SOURCE_PRIVATE_IP_ADDRESS=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".private_ip_address")
+
+    SOURCE_OUTPUTS=$(aws ec2 run-instances \
+      --image-id "${SOURCE_IMAGE_ID}" \
+      --instance-type "${SOURCE_INSTANCE_TYPE}" \
+      --key-name "demo-key-pair" \
+      --network-interfaces \
+        "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${SOURCE_SECURITY_GROUP_ID},SubnetId=${SOURCE_SUBNET_ID}" \
+      --tag-specifications \
+        "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]"
+    )
+
+    INSTANCE_TYPE=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".instance_type")
+    IMAGE_ID=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".image_id")
+    SECURITY_GROUP_ID=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".security_group")
+    SUBNET_ID=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".subnet_id")
+    PRIVATE_IP_ADDRESS=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".private_ip_address")
+
+    TARGET_OUTPUTS=$(aws ec2 run-instances \
+      --image-id "${AMI_LINUX2}" \
+      --instance-type "${EC2_INSTANCE_TYPE}" \
+      --key-name "demo-key-pair" \
+      --network-interfaces \
+        "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${TARGET_SECURITY_GROUP_ID},SubnetId=${TARGET_SUBNET_ID}" \
+      --tag-specifications \
+        "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]"
+    )
+
+    if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" ; then
+      echo "failed to wait on the source EC2 instance = "${SOURCE_INSTANCE_ID}""
+    fi
+
+    if ! aws ec2 wait instance-status-ok --instance-ids "${TARGET_INSTANCE_ID}" ; then
+      echo "failed to wait on the target EC2 instance = "${TARGET_INSTANCE_ID}""
+    fi
+
+    aws ssm send-command \
+      --instance-ids "${SOURCE_INSTANCE_ID}" \
+      --document-name "AWS-RunShellScript" \
+      --comment "aws-ping command to run ping to all relevant EC2 instances in all the regions" \
+      --parameters commands=["/home/ec2-user/aws-ping-cross-region/ping-target.sh --source-region ${SOURCE_REGION} --target-region ${TARGET_REGION} --target-ip ${TARGET_IP_ADDRESS} --test-uuid "${TEST_EXECUTION_UUID}" ] \
+      --output text \
+      --query "Command.CommandIad"
+  done
 done
-
-############################
-# Create a json file
-############################
-
-# Start of JSON
-echo "{"
-
-LAST_REGION=$(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text | tail -1)
-for REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
-do
-  # https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/finding-an-ami.html
-  AMI_LINUX2=$(aws ec2 describe-images \
-    --region "${REGION}" \
-    --owners amazon \
-    --filters 'Name=name,Values=amzn2-ami-hvm-2.0.????????-x86_64-gp2' 'Name=state,Values=available' \
-    --query "reverse(sort_by(Images, &CreationDate))[0].ImageId" \
-    --output text
-  )
-
-  OUTPUTS=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[]" --region "${REGION}") 
-  SECURITY_GROUP_ID=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="SecurityGroup") | .OutputValue')
-  SUBNET_ID=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="Subnet") | .OutputValue')
-  SUBNET_CIDR_FIRST_TWO_OCTETS=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="SubnetCidrFirstTwoOctets") | .OutputValue')
-
-  echo "\"${REGION}\": {"
-  echo "  \"instance_type\": \"${EC2_INSTANCE_TYPE}\","
-  echo "  \"image_id\": \"${AMI_LINUX2}\","
-  echo "  \"security_group\": \"${SECURITY_GROUP_ID}\","
-  echo "  \"subnet_id\": \"${SUBNET_ID}\","
-  echo "  \"private_ip_address\": \"${SUBNET_CIDR_FIRST_TWO_OCTETS}.0.6\"" 
-  if [ "$REGION" = "${LAST_REGION}" ]; then
-    echo "}"
-  else
-    echo "},"
-  fi
-
-#  aws ec2 run-instances \
-#    --image-id "${AMI_LINUX2}" \
-#    --instance-type "${EC2_INSTANCE_TYPE}" \
-#    --key-name "demo-key-pair" \
-#    --network-interfaces \
-#      "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${SECURITY_GROUP_ID},SubnetId=${SUBNET_ID},PrivateIpAddresses=[{Primary=true,PrivateIpAddress=${PRIVATE_IP_ADDRESS}}]" \
-#    --tag-specifications \
-#      "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]"
-done
-
-# End of JSON
-echo "}"
