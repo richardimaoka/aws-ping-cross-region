@@ -89,12 +89,12 @@ TARGET_INSTANCE_ID=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].InstanceId")
 TARGET_PRIVATE_IP=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].NetworkInterfaces[].PrivateIpAddress")
 
 echo "{ "
-echo "  \"source\" {"
+echo "  \"source\": {"
 echo "    \"instance_id\": \"${SOURCE_INSTANCE_ID}\","
 echo "    \"private_ip_address\": \"${SOURCE_PRIVATE_I}\","
 echo "    \"region\": \"${SOURCE_REGION}\""
 echo "  },"
-echo "  \"target\" {"
+echo "  \"target\": {"
 echo "    \"instance_id\": \"${TARGET_INSTANCE_ID}\","
 echo "    \"private_ip_address\": \"${TARGET_PRIVATE_IP}\","
 echo "    \"region\": \"${TARGET_REGION}\""

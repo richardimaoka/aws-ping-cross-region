@@ -32,12 +32,12 @@ done
 #################################
 if [ -z "${FILE_NAME}" ] ; then
   EC2_INPUT_JSON=$(./create-ec2-input-json.sh)
-  if ! $? ; then
+  if [ $? -ne 0 ] ; then
     exit 1
   fi
 else
-  EC2_INPUT_JSON=$(cat "${FILE_NAME}" | jq)
-  if ! $? ; then
+  EC2_INPUT_JSON=$(cat "${FILE_NAME}" | jq -r ".")
+  if [ $? -ne 0 ] ; then
     exit 1
   fi
 fi
@@ -51,8 +51,8 @@ do
   for TARGET_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
   do
     if [ "${SOURCE_REGION}" != "${TARGET_REGION}" ]; then
-      EC2_OUTPUT=$(cat "${EC2_INPUT_JSON }" | ./create-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}")
-      if ! $? ; then
+      EC2_OUTPUT=$(echo "${EC2_INPUT_JSON }" | ./create-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}")
+      if [ $? -ne 0 ] ; then
         exit 1
       fi
 
