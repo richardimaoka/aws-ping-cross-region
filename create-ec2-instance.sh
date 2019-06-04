@@ -30,12 +30,12 @@ if [ -z "${TARGET_REGION}" ] ; then
   >&2 echo "ERROR: option --target-region needs to be passed"
   ERROR="1"
 fi
-if ! echo "${INPUT_JSON}" | jq ; then
+if ! echo "${INPUT_JSON}" | jq -r "." ; then
   >&2 echo "ERROR: the input is not valid json:"
   >&2 echo "${INPUT_JSON}"
   ERROR="1"
 fi
-if [ -n ERROR ] ; then
+if [ -n "${ERROR}" ] ; then
   exit 1
 fi
 
