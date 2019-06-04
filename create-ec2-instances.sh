@@ -21,7 +21,8 @@ do
       --network-interfaces \
         "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${SOURCE_SECURITY_GROUP_ID},SubnetId=${SOURCE_SUBNET_ID}" \
       --tag-specifications \
-        "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]"
+        "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
+      --user-data file:\\user-data.txt
     )
 
     INSTANCE_TYPE=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".instance_type")
@@ -37,7 +38,8 @@ do
       --network-interfaces \
         "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${TARGET_SECURITY_GROUP_ID},SubnetId=${TARGET_SUBNET_ID}" \
       --tag-specifications \
-        "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]"
+        "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
+      --user-data file:\\user-data.txt
     )
 
     if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" ; then

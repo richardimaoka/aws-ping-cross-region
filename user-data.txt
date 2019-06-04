@@ -1,0 +1,6 @@
+#!/bin/bash
+yum update -y
+yum -y install git
+cd /home/ec2-user
+git clone https://github.com/richardimaoka/aws-ping-cross-region
+yum -y install jq
