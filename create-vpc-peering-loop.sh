@@ -46,9 +46,9 @@ do
   do
     if [ "${ACCEPTER_REGION}" != "${REQUESTER_REGION}" ] ; then
       if [ "true" = $(echo "${EXISTING_VPC_PEERING_REGIONS}" | jq -r "contains([\"${REQUESTER_REGION}\"])") ]; then
-        echo "VPC Peering between ${REQUESTER_REGION} and ${ACCEPTER_REGION} already exists"
+        echo "VPC Peering between ${ACCEPTER_REGION} and ${REQUESTER_REGION} already exists"
       else
-        echo "Creating VPC Peering between accepter region = ${ACCEPTER_REGION} and requester region = ${REQUESTER_REGION}"
+        echo "Creating VPC Peering between ACCEPTER_REGION=${ACCEPTER_REGION} and REQUESTER_REGION=${REQUESTER_REGION}"
         REQUESTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REQUESTER_REGION}")
         # If it fails, an error message is displayed and it continues to the next REGION
         VPC_PEERING_OUTPUT=$(aws ec2 create-vpc-peering-connection \
