@@ -33,7 +33,7 @@ do
       echo "VPC Peering between ${REQUESTER_REGION} and ${ACCEPTER_REGION} already exists"
     else
       # If it fails, an error message is displayed and it continues to the next REGION
-      ./create-vpc-peering.sh --stack-name "${STACK_NAME}" -accepter-region "${ACCEPTER_REGION}" --requester-region "${REQUESTER_REGION}"
+      ./create-vpc-peering.sh --stack-name "${STACK_NAME}" --accepter-region "${ACCEPTER_REGION}" --requester-region "${REQUESTER_REGION}"
     fi
   done
 done
