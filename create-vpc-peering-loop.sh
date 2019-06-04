@@ -36,6 +36,8 @@ done
 ################################################
 # Step 2: Create VPC Peering in all the regions
 ################################################
+AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
+
 for ACCEPTER_REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do 
   ACCEPTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${ACCEPTER_REGION}")
