@@ -53,7 +53,7 @@ aws ec2 run-instances \
   --tag-specifications \
     "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
   --user-data file:\\user-data.txt \
-  --region 
+  --region "${SOURCE_REGION}"
 
 
 TARGET_INSTANCE_TYPE=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".instance_type")
@@ -69,7 +69,9 @@ aws ec2 run-instances \
     "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${TARGET_SECURITY_GROUP_ID},SubnetId=${TARGET_SUBNET_ID}" \
   --tag-specifications \
     "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
-  --user-data file:\\user-data.txt
+  --user-data file:\\user-data.txt \
+  --region "${TARGET_REGION}"
+
 
 
 # if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" ; then
