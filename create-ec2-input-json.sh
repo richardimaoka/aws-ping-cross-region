@@ -20,13 +20,11 @@ do
   OUTPUTS=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[]" --region "${REGION}") 
   SECURITY_GROUP_ID=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="SecurityGroup") | .OutputValue')
   SUBNET_ID=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="Subnet") | .OutputValue')
-  SUBNET_CIDR_FIRST_TWO_OCTETS=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="SubnetCidrFirstTwoOctets") | .OutputValue')
 
   echo "\"${REGION}\": {"
   echo "  \"image_id\": \"${AMI_LINUX2}\","
   echo "  \"security_group\": \"${SECURITY_GROUP_ID}\","
-  echo "  \"subnet_id\": \"${SUBNET_ID}\","
-  echo "  \"private_ip_address\": \"${SUBNET_CIDR_FIRST_TWO_OCTETS}.0.6\"" 
+  echo "  \"subnet_id\": \"${SUBNET_ID}\"
   if [ "$REGION" = "${LAST_REGION}" ]; then
     echo "}"
   else

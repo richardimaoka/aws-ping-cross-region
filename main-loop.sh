@@ -16,15 +16,42 @@ do
         S3_BUCKET_NAME="$2"
         shift 2
         ;;
+      '-f' | '--file-name' )
+        if [ -z "$2" ]; then
+            echo "option -f or --file-name requires an argument -- $1" 1>&2
+            exit 1
+        fi
+        FILE_NAME="$2"
+        shift 2
+        ;;
     esac
 done
+
+#################################
+# 1. Prepare the input json
+#################################
+if [ -z "${FILE_NAME}" ] ; then
+  EC2_INPUT_JSON=$(./create-ec2-input-json.sh)
+  if ! $? ; then
+    exit 1
+  fi
+else
+  EC2_INPUT_JSON=$(cat "${FILE_NAME}" | jq)
+  if ! $? ; then
+    exit 1
+  fi
+fi
+
+######################################################
+# 2. Create EC2 instances and send the ping command
+######################################################
 
 for SOURCE_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
 do
   for TARGET_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
   do
     if [ "${SOURCE_REGION}" != "${TARGET_REGION}" ]; then
-      EC2_OUTPUT=$(./create-ec2-instance --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}")
+      EC2_OUTPUT=$(cat "${EC2_INPUT_JSON }" | ./create-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}")
       if ! $? ; then
         exit 1
       fi
