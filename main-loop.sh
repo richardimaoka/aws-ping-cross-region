@@ -70,7 +70,7 @@ do
         exit 1
       fi
 
-      echo "Sending command to the source EC@"
+      echo "Sending command to the source EC"
       aws ssm send-command \
         --instance-ids "${SOURCE_INSTANCE_ID}" \
         --document-name "AWS-RunShellScript" \

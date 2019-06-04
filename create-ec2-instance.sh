@@ -58,7 +58,7 @@ SOURCE_OUTPUTS=$(aws ec2 run-instances \
     "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${SOURCE_SECURITY_GROUP_ID},SubnetId=${SOURCE_SUBNET_ID}" \
   --tag-specifications \
     "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
-  --user-data file:\\user-data.txt \
+  --user-data file://user-data.txt \
   --region "${SOURCE_REGION}"
 )
 
@@ -79,7 +79,7 @@ TARGET_OUTPUTS=$(aws ec2 run-instances \
     "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${TARGET_SECURITY_GROUP_ID},SubnetId=${TARGET_SUBNET_ID}" \
   --tag-specifications \
     "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
-  --user-data file:\\user-data.txt \
+  --user-data file://user-data.txt \
   --region "${TARGET_REGION}"
 )
 

@@ -74,13 +74,23 @@ if [ -n "${ERROR}" ] ; then
   exit 1
 fi
 
+echo "SOURCE_REGION=${SOURCE_REGION}"
+echo "TARGET_REGION=${TARGET_REGION}"
+echo "TARGET_IP=${TARGET_IP}"
+echo "TEST_EXECUTION_UUID=${TEST_EXECUTION_UUID}"
+echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
+
+echo "Start pinging the target, and saving to a file, ping_result.json"
 ping -c 30 "${TARGET_IP}" | ping-script/ping_to_json.sh | tee ping_result.json
 
+echo "Saving the metadata to a file, ping_metadata.json"
 echo "{ \"meta_data\": {\"source_region\": \"${SOURCE_REGION}\", \"target_region\": \"${TARGET_REGION}\", \"test_uuid\": \"${TEST_EXECUTION_UUID}\"  } }" | tee ping_metadata.json
 
+echo "Merging ping_result.json nd ping_metadata.json into result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log.json"
 jq -s '.[0] * .[1]' ping_result.json ping_metadata.json | jq -c "." > "result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log"
 
 # move the result file to S3
+echo "Copying result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log to s3://${S3_BUCKET_NAME}/aws-ping-cross-region/${TEST_EXECUTION_UUID}/"
 aws s3 cp \
   "result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log" \
   "s3://${S3_BUCKET_NAME}/aws-ping-cross-region/${TEST_EXECUTION_UUID}/result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log"
