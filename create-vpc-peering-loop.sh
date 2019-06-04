@@ -29,12 +29,14 @@ do
   EXISTING_VPC_PEERING_REGIONS=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}'].RequesterVpcInfo.Region" --region "${ACCEPTER_REGION}")
   for REQUESTER_REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
   do
-    if [ "true" = $(echo "${EXISTING_VPC_PEERING_REGIONS}" | jq -r "contains([\"${ACCEPTER_REGION}\"])") ]; then
-      echo "VPC Peering between ${REQUESTER_REGION} and ${ACCEPTER_REGION} already exists"
-    else
-      # If it fails, an error message is displayed and it continues to the next REGION
-      ./create-vpc-peering.sh --stack-name "${STACK_NAME}" --accepter-region "${ACCEPTER_REGION}" --requester-region "${REQUESTER_REGION}"
-    fi
+    if [ "${ACCEPTER_REGION}" != "${REQUESTER_REGION}" ] ; then
+      if [ "true" = $(echo "${EXISTING_VPC_PEERING_REGIONS}" | jq -r "contains([\"${ACCEPTER_REGION}\"])") ]; then
+        echo "VPC Peering between ${REQUESTER_REGION} and ${ACCEPTER_REGION} already exists"
+      else
+        # If it fails, an error message is displayed and it continues to the next REGION
+        ./create-vpc-peering.sh --stack-name "${STACK_NAME}" --accepter-region "${ACCEPTER_REGION}" --requester-region "${REQUESTER_REGION}"
+      fi
+    fi      
   done
 done
 
