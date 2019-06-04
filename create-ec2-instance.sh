@@ -22,6 +22,23 @@ do
     esac
 done
 
+if [ -z "${SOURCE_REGION}" ] ; then
+  >&2 echo "ERROR: option --source-region needs to be passed"
+  ERROR="1"
+fi
+if [ -z "${TARGET_REGION}" ] ; then
+  >&2 echo "ERROR: option --target-region needs to be passed"
+  ERROR="1"
+fi
+if ! echo "${INPUT_JSON}" | jq ; then
+  >&2 echo "ERROR: the input is not valid json:"
+  >&2 echo "${INPUT_JSON}"
+  ERROR="1"
+fi
+if [ -n ERROR ] ; then
+  exit 1
+fi
+
 SOURCE_INSTANCE_TYPE=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".instance_type")
 SOURCE_IMAGE_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".image_id")
 SOURCE_SECURITY_GROUP_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".security_group")
