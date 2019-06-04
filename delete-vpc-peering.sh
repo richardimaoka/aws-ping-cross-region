@@ -20,6 +20,13 @@ fi
 
 for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do 
-  echo "Deleting the CloudFormation stack=${STACK_NAME} for region=${REGION} if exists."
+  echo "Deleting VPC Peering for CloudFormation stack=${STACK_NAME} in region=${REGION} if exists."
+  VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION}")
+  aws cloudformation delete-stack --stack-name "${STACK_NAME}" --region "${REGION}"
   
+  for VPC_PEERING_ID in $(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}'].VpcPeeringConnectionId" --region "${ACCEPTER_REGION}")
+  do
+    echo "Deleting ${VPC_PEERING_ID}"
+    aws ec2 delete-vpc-peering-connection --vpc-peering-connection-id
+  done
 done 

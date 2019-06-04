@@ -17,16 +17,8 @@ if [ -z "${STACK_NAME}" ] ; then
   echo "ERROR: Option --stack-name needs to be specified"
   exit 1
 fi
-
 for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do 
-  echo "Deleting VPC Peering for CloudFormation stack=${STACK_NAME} in region=${REGION} if exists."
-  VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION}")
+  echo "Deleting the CloudFormation stack=${STACK_NAME} for region=${REGION} if exists."
   aws cloudformation delete-stack --stack-name "${STACK_NAME}" --region "${REGION}"
-  
-  for VPC_PEERING_ID in $(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}'].VpcPeeringConnectionId" --region "${ACCEPTER_REGION}")
-  do
-    echo "Deleting ${VPC_PEERING_ID}"
-    aws ec2 delete-vpc-peering-connection --vpc-peering-connection-id
-  done
 done 
