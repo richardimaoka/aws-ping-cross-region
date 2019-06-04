@@ -228,3 +228,18 @@ Outputs:
       - CidrBlock
     Export:
       Name: !Sub "${AWS::StackName}-VPCCidrBlock"      
+  SecurityGroup:
+    Value: !Ref SecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-SecurityGroup"
+  Subnet:
+    Value: !Ref SubnetInAZ1
+    Export:
+      Name: !Sub "${AWS::StackName}-Subnet"
+  SubnetCidrFirstTwoOctets:
+    Value:
+      !Sub
+      - "${RegionSubnet}"
+      - { RegionSubnet: !FindInMap [RegionMap, Ref: "AWS::Region", RegionSubnet] }            
+    Export:
+      Name: !Sub "${AWS::StackName}-Subnet-Cidr-First-Two-Octets"
