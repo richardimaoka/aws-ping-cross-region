@@ -91,7 +91,7 @@ TARGET_PRIVATE_IP=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].NetworkInterf
 echo "{ "
 echo "  \"source\" {"
 echo "    \"instance_id\": \"${SOURCE_INSTANCE_ID}\","
-echo "    \"private_ip_address\": \"${SOURCE_INSTANCE_ID}\","
+echo "    \"private_ip_address\": \"${SOURCE_PRIVATE_I}\","
 echo "    \"region\": \"${SOURCE_REGION}\""
 echo "  },"
 echo "  \"target\" {"
