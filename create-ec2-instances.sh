@@ -4,6 +4,19 @@ read -r INPUT
 
 TEST_EXECUTION_UUID=$(uuidgen)
 
+for OPT in "$@"
+do
+    case "$OPT" in
+      '--s3-bucket' )
+        if [ -z "$2" ]; then
+            echo "option --s3-bucket requires an argument -- $1" 1>&2
+            exit 1
+        fi
+        S3_BUCKET_NAME="$2"
+        ;;
+    esac
+done
+
 for SOURCE_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
 do
   for TARGET_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
@@ -21,7 +34,8 @@ do
         "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${SOURCE_SECURITY_GROUP_ID},SubnetId=${SOURCE_SUBNET_ID}" \
       --tag-specifications \
         "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
-      --user-data file:\\user-data.txt
+      --user-data file:\\user-data.txt \
+      --region 
     )
 
     TARGET_INSTANCE_TYPE=$(echo "${INPUT}" | jq -r ".\"$SOURCE_REGION\".instance_type")

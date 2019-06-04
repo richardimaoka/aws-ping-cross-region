@@ -1,25 +1,6 @@
 #!/bin/sh
 
-# parse options
-EC2_INSTANCE_TYPE="t2.micro"
 STACK_NAME="PingCrossRegionExperiment"
-for OPT in "$@"
-do
-    case "$OPT" in
-      '--instance-type' )
-        if [ -z "$2" ]; then
-          echo "option --instance-type requires an argument -- $1" 1>&2
-          exit 1
-        fi
-        EC2_INSTANCE_TYPE="$2"
-        shift 2
-        ;;
-    esac
-done
-
-############################
-# Create a json file
-############################
 
 # Start of JSON
 echo "{"
@@ -42,7 +23,6 @@ do
   SUBNET_CIDR_FIRST_TWO_OCTETS=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="SubnetCidrFirstTwoOctets") | .OutputValue')
 
   echo "\"${REGION}\": {"
-  echo "  \"instance_type\": \"${EC2_INSTANCE_TYPE}\","
   echo "  \"image_id\": \"${AMI_LINUX2}\","
   echo "  \"security_group\": \"${SECURITY_GROUP_ID}\","
   echo "  \"subnet_id\": \"${SUBNET_ID}\","
