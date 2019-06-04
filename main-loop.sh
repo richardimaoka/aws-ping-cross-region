@@ -51,7 +51,7 @@ do
   for TARGET_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
   do
     if [ "${SOURCE_REGION}" != "${TARGET_REGION}" ]; then
-      echo "testing ping from region=${SOURCE_REGION} to region=${TARGET_REGION}"
+      echo "testing ping from the source region=${SOURCE_REGION} to the target region=${TARGET_REGION}"
   
       EC2_OUTPUT=$(echo "${EC2_INPUT_JSON}" | ./create-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}")
       if [ $? -ne 0 ] ; then
@@ -62,14 +62,15 @@ do
       TARGET_INSTANCE_ID=$(echo "${EC2_OUTPUT}" | jq -r ".target.instance_id")
 
       echo "Waiting for the EC2 instances to be status = ok: source = ${SOURCE_INSTANCE_ID} and target = ${TARGET_INSTANCE_ID}"
-      if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" ; then
+      if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
         >&2 echo "ERROR: failed to wait on the source EC2 instance = ${SOURCE_INSTANCE_ID}"
         exit 1
-      elif ! aws ec2 wait instance-status-ok --instance-ids "${TARGET_INSTANCE_ID}" ; then
+      elif ! aws ec2 wait instance-status-ok --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" ; then
         >&2 echo "ERROR: failed to wait on the source EC2 instance = ${TARGET_INSTANCE_ID}"
         exit 1
       fi
 
+      echo "Sending command to the source EC@"
       aws ssm send-command \
         --instance-ids "${SOURCE_INSTANCE_ID}" \
         --document-name "AWS-RunShellScript" \
