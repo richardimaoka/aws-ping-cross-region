@@ -11,6 +11,7 @@ do
             exit 1
         fi
         SOURCE_REGION="$2"
+        shift 2
         ;;
       '--target-region' )
         if [ -z "$2" ]; then
@@ -18,6 +19,7 @@ do
             exit 1
         fi
         TARGET_REGION="$2"
+        shift 2
         ;;
     esac
 done
@@ -39,12 +41,16 @@ if [ -n "${ERROR}" ] ; then
   exit 1
 fi
 
+######################################
+# 1. Create the source EC2 instance
+######################################
+
 SOURCE_INSTANCE_TYPE=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".instance_type")
 SOURCE_IMAGE_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".image_id")
 SOURCE_SECURITY_GROUP_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".security_group")
 SOURCE_SUBNET_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".subnet_id")
 
-aws ec2 run-instances \
+SOURCE_OUTPUTS=$(aws ec2 run-instances \
   --image-id "${SOURCE_IMAGE_ID}" \
   --instance-type "${SOURCE_INSTANCE_TYPE}" \
   --key-name "demo-key-pair" \
@@ -54,14 +60,18 @@ aws ec2 run-instances \
     "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
   --user-data file:\\user-data.txt \
   --region "${SOURCE_REGION}"
+)
 
+######################################
+# 1. Create the target EC2 instance
+######################################
 
 TARGET_INSTANCE_TYPE=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".instance_type")
 TARGET_IMAGE_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".image_id")
 TARGET_SECURITY_GROUP_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".security_group")
 TARGET_SUBNET_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".subnet_id")
 
-aws ec2 run-instances \
+TARGET_OUTPUTS=$(aws ec2 run-instances \
   --image-id "${TARGET_IMAGE_ID}" \
   --instance-type "${TARGET_INSTANCE_TYPE}" \
   --key-name "demo-key-pair" \
@@ -71,17 +81,31 @@ aws ec2 run-instances \
     "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
   --user-data file:\\user-data.txt \
   --region "${TARGET_REGION}"
+)
 
+if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" ; then
+  >&2 echo "ERROR: failed to wait on the source EC2 instance = ${SOURCE_INSTANCE_ID}"
+  exit 1
+fi
+if ! aws ec2 wait instance-status-ok --instance-ids "${TARGET_INSTANCE_ID}" ; then
+  >&2 echo "ERROR: failed to wait on the target EC2 instance = ${TARGET_INSTANCE_ID}"
+  exit
+fi
 
+SOURCE_INSTANCE_ID=$(echo "${SOURCE_OUTPUTS}" | jq -r ".Instances[].InstanceId")
+SOURCE_PRIVATE_IP=$(echo "${SOURCE_OUTPUTS}" | jq -r ".Instances[].NetworkInterfaces[].PrivateIpAddress")
+TARGET_INSTANCE_ID=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].InstanceId")
+TARGET_PRIVATE_IP=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].NetworkInterfaces[].PrivateIpAddress")
 
-# if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" ; then
-#   >&2 echo "ERROR: failed to wait on the source EC2 instance = ${SOURCE_INSTANCE_ID}"
-#   exit 1
-# fi
-
-# if ! aws ec2 wait instance-status-ok --instance-ids "${TARGET_INSTANCE_ID}" ; then
-#   >&2 echo "ERROR: failed to wait on the target EC2 instance = ${TARGET_INSTANCE_ID}"
-#   exit
-# fi
-
-# echo "{ \"source_instance_id\": \"${SOURCE_INSTANCE_ID}\", \"target_instance_id\": \"${TARGET_INSTANCE_ID}\" }"
+echo "{ "
+echo "  \"source\" {"
+echo "    \"instance_id\": \"${SOURCE_INSTANCE_ID}\","
+echo "    \"private_ip_address\": \"${SOURCE_INSTANCE_ID}\","
+echo "    \"region\": \"${SOURCE_REGION}\""
+echo "  },"
+echo "  \"target\" {"
+echo "    \"instance_id\": \"${TARGET_INSTANCE_ID}\","
+echo "    \"private_ip_address\": \"${TARGET_PRIVATE_IP}\","
+echo "    \"region\": \"${TARGET_REGION}\""
+echo "  }"
+echo "}"
