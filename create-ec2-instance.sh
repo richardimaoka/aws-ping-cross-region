@@ -63,7 +63,7 @@ SOURCE_OUTPUTS=$(aws ec2 run-instances \
 )
 
 ######################################
-# 1. Create the target EC2 instance
+# 2. Create the target EC2 instance
 ######################################
 
 TARGET_INSTANCE_TYPE=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".instance_type")

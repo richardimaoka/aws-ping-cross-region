@@ -1,7 +1,5 @@
 #!/bin/sh
 
-S3_BUCKET_NAME="samplebucket-richardimaoka-sample-sample"
-
 for OPT in "$@"
 do
   case "$OPT" in
@@ -66,6 +64,10 @@ if [ -z "${TARGET_IP}" ] ; then
 fi
 if [ -z "${TEST_EXECUTION_UUID}" ] ; then
   echo "ERROR: Option --test-uuid needs to be specified"
+  ERROR="1"
+fi
+if [ -z "${S3_BUCKET_NAME}" ] ; then
+  echo "ERROR: Option --s3-bucket needs to be specified"
   ERROR="1"
 fi
 if [ -n "${ERROR}" ] ; then
