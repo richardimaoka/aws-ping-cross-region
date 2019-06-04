@@ -74,8 +74,8 @@ do
         --parameters commands=["/home/ec2-user/aws-ping-cross-region/ping-target.sh --source-region ${SOURCE_REGION} --target-region ${TARGET_REGION} --target-ip ${TARGET_IP_ADDRESS} --test-uuid ${TEST_EXECUTION_UUID}" --s3-bucket "${S3_BUCKET_NAME }"] \
         --output text \
         --query "Command.CommandId"
+      break
     fi
-    break
   done
   break
 done
