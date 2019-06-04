@@ -49,6 +49,7 @@ AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 ACCEPTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${ACCEPTER_REGION}")
 REQUESTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REQUESTER_REGION}")
 
+echo "Creating VPC Peering between requester=${REQUESTER_VPC_ID}(${REQUESTER_REGION}) and accepter=${ACCEPTER_VPC_ID}(${ACCEPTER_REGION})"
 VPC_PEERING_OUTPUT=$(aws ec2 create-vpc-peering-connection \
   --peer-owner-id "${AWS_ACCOUNT_ID}" \
   --peer-vpc-id "${ACCEPTER_VPC_ID}" \
@@ -61,6 +62,7 @@ if [ $? -ne 0 ] ; then
 fi
 
 VPC_PEERING_ID=$(echo "${VPC_PEERING_OUTPUT}" | jq -r ".VpcPeeringConnection.VpcPeeringConnectionId")
+echo "Accepting ${VPC_PEERING_ID} in ${ACCEPTER_REGION}"
 aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${ACCEPTER_REGION}" > /dev/null
 if [ $? -ne 0 ] ; then
   exit 1
