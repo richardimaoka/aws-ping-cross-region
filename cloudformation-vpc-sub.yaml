@@ -228,7 +228,3 @@ Outputs:
       - CidrBlock
     Export:
       Name: !Sub "${AWS::StackName}-VPCCidrBlock"      
-  RouteTable:
-    Value: !Ref RouteTable
-    Export:
-      Name: !Sub "${AWS::StackName}-RouteTable"
