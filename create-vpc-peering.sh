@@ -19,20 +19,20 @@ do
       STACK_NAME="$2"
       shift 2
       ;;
-    '--accepter-region' )
+    '--reqion1' )
       if [ -z "$2" ]; then
-          echo "option --accepter-region requires an argument -- $1" 1>&2
+          echo "option --region1 requires an argument -- $1" 1>&2
           exit 1
       fi
-      ACCEPTER_REGION="$2"
+      REGION1="$2"
       shift 2
       ;;
-    '--requester-region' )
+    '--reqion2' )
       if [ -z "$2" ]; then
-          echo "option --requester-region requires an argument -- $1" 1>&2
+          echo "option --region2 requires an argument -- $1" 1>&2
           exit 1
       fi
-      REQUESTER_REGION="$2"
+      REGION2="$2"
       shift 2
       ;;
   esac
@@ -41,49 +41,61 @@ if [ -z "${STACK_NAME}" ] ; then
   >&2 echo "ERROR: Option --stack-name needs to be specified"
   ERROR="1"
 fi
-if [ -z "${ACCEPTER_REGION}" ] ; then
-  >&2 echo "ERROR: Option --accepter-region needs to be specified"
+if [ -z "${REGION1}" ] ; then
+  >&2 echo "ERROR: Option --region1 needs to be specified"
   ERROR="1"
 fi
-if [ -z "${REQUESTER_REGION}" ] ; then
-  >&2 echo "ERROR: Option --requester-region  needs to be specified"
+if [ -z "${REGION2}" ] ; then
+  >&2 echo "ERROR: Option --region2  needs to be specified"
   ERROR="1"
 fi
 if [ -n "${ERROR}" ] ; then
   exit 1
 fi
 
-ACCEPTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${ACCEPTER_REGION}")
-REQUESTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REQUESTER_REGION}")
+REGION1_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION1}")
+REGION2_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION2}")
 
 #######################################
 # Step 1. Create VPC Peering connection
 #######################################
 
-VPC_PEERING_IN_ACCEPTER_VPC=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?Status.Code!='deleted']" --region "${ACCEPTER_REGION}")
-VPC_PEERING_IN_DIRECTION1=$(echo "${VPC_PEERING_IN_ACCEPTER_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${ACCEPTER_VPC_ID}\") | select(.RequesterVpcInfo.VpcId==\"${REQUESTER_VPC_ID}\")")
-VPC_PEERING_IN_DIRECTION2=$(echo "${VPC_PEERING_IN_ACCEPTER_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${REQUESTER_VPC_ID}\") | select(.RequesterVpcInfo.VpcId==\"${ACCEPTER_VPC_ID}\")")
+VPC_PEERING_IN_REGION1_VPC=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?Status.Code!='deleted']" --region "${REGION1}")
+VPC_PEERING_IN_DIRECTION1=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${REGION1_VPC_ID}\") | select(.RequesterVpcInfo.VpcId==\"${REGION2_VPC_ID}\")")
+VPC_PEERING_IN_DIRECTION2=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${REGION2_VPC_ID}\") | select(.RequesterVpcInfo.VpcId==\"${REGION1_VPC_ID}\")")
 
 # If VPC Peering exists in either direction, do not create the other direction
 if [ -n "${VPC_PEERING_IN_DIRECTION1}" ] ; then 
-  echo "VPC Peering between ${ACCEPTER_REGION} and ${REQUESTER_REGION} already exists"
-  VPC_PEERING_ID=$(echo "${VPC_PEERING_IN_DIRECTION1}" | jq -r ".VpcPeeringConnection.VpcPeeringConnectionId")  
+  echo "VPC Peering between ${REGION1} and ${REGION2} already exists"
+  VPC_PEERING_ID=$(echo "${VPC_PEERING_IN_DIRECTION1}" | jq -r ".VpcPeeringConnectionId")
+  ACCEPTER_REGION="${REGION1}"
+  REQUESTER_REGION="${REGION2}"
+  ACCEPTER_VPC_ID="${REGION1_VPC_ID}"
+  REQUESTER_VPC_ID="${REGION2_VPC_ID}"
 elif  [ -n "${VPC_PEERING_IN_DIRECTION2}" ] ; then
-  echo "VPC Peering between ${REQUESTER_REGION} and ${ACCEPTER_REGION} already exists"
-  VPC_PEERING_ID=$(echo "${VPC_PEERING_IN_DIRECTION2}" | jq -r ".VpcPeeringConnection.VpcPeeringConnectionId")  
+  echo "VPC Peering between ${REGION2} and ${REGION1} already exists"
+  VPC_PEERING_ID=$(echo "${VPC_PEERING_IN_DIRECTION2}" | jq -r ".VpcPeeringConnectionId")  
+  ACCEPTER_REGION="${REGION2}"
+  REQUESTER_REGION="${REGION1}"
+  ACCEPTER_VPC_ID="${REGION2_VPC_ID}"
+  REQUESTER_VPC_ID="${REGION1_VPC_ID}"
 else   
-  echo "Creating VPC Peering between requester=${REQUESTER_VPC_ID}(${REQUESTER_REGION}) and accepter=${ACCEPTER_VPC_ID}(${ACCEPTER_REGION})"
+  echo "Creating VPC Peering between requester=${REGION2_VPC_ID}(${REGION2}) and accepter=${REGION1_VPC_ID}(${REGION1})"
   # If it fails, an error message is displayed on stderror
   if ! VPC_PEERING_OUTPUT=$(aws ec2 create-vpc-peering-connection \
     --peer-owner-id "${AWS_ACCOUNT_ID}" \
-    --peer-vpc-id "${ACCEPTER_VPC_ID}" \
-    --vpc-id "${REQUESTER_VPC_ID}" \
-    --peer-region "${ACCEPTER_REGION}" \
-    --region "${REQUESTER_REGION}" 
+    --peer-vpc-id "${REGION1_VPC_ID}" \
+    --vpc-id "${REGION2_VPC_ID}" \
+    --peer-region "${REGION1}" \
+    --region "${REGION2}" 
   ) ; then
     exit 1
   fi
   VPC_PEERING_ID=$(echo "${VPC_PEERING_OUTPUT}" | jq -r ".VpcPeeringConnection.VpcPeeringConnectionId")
+  ACCEPTER_REGION="${REGION1}"
+  REQUESTER_REGION="${REGION2}"
+  ACCEPTER_VPC_ID="${REGION1_VPC_ID}"
+  REQUESTER_VPC_ID="${REGION2_VPC_ID}"
 fi
 
 #######################################
@@ -103,7 +115,7 @@ fi
 ACCEPTER_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text --region "${ACCEPTER_REGION}")
 ACCEPTER_CIDR_BLOCK=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}'].RequesterVpcInfo.Region" --region "${ACCEPTER_REGION}")
 REQUESTER_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text --region "${REQUESTER_REGION}")
-REQUESTER_CIDR_BLOCK=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${REQUESTER_VPC_ID}'].RequesterVpcInfo.Region" --region "${REQUESTER_REGION}")
+REQUESTER_CIDR_BLOCK=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?RequesterVpcInfo.VpcId=='${REQUESTER_VPC_ID}'].RequesterVpcInfo.Region" --region "${REQUESTER_REGION}")
 
 echo "Adding VPC peering route to the route table of the main VPC"
 aws ec2 create-route \
