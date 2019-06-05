@@ -59,7 +59,6 @@ REGION2_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}"
 #######################################
 # Step 1. Create VPC Peering connection
 #######################################
-
 VPC_PEERING_IN_REGION1_VPC=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?Status.Code!='deleted']" --region "${REGION1}")
 VPC_PEERING_IN_DIRECTION1=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${REGION1_VPC_ID}\") | select(.RequesterVpcInfo.VpcId==\"${REGION2_VPC_ID}\")")
 VPC_PEERING_IN_DIRECTION2=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${REGION2_VPC_ID}\") | select(.RequesterVpcInfo.VpcId==\"${REGION1_VPC_ID}\")")
@@ -68,7 +67,7 @@ VPC_PEERING_IN_DIRECTION2=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r ".[] | 
 if [ -n "${VPC_PEERING_IN_DIRECTION1}" ] ; then 
   echo "VPC Peering between ${REGION1} and ${REGION2} already exists"
   VPC_PEERING_ID=$(echo "${VPC_PEERING_IN_DIRECTION1}" | jq -r ".VpcPeeringConnectionId")
-  VPC_PEERING_STATUS=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r "[].Status.code")
+  VPC_PEERING_STATUS=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r ".[].Status.code")
 
   ACCEPTER_REGION="${REGION1}"
   REQUESTER_REGION="${REGION2}"
@@ -77,7 +76,7 @@ if [ -n "${VPC_PEERING_IN_DIRECTION1}" ] ; then
 elif  [ -n "${VPC_PEERING_IN_DIRECTION2}" ] ; then
   echo "VPC Peering between ${REGION2} and ${REGION1} already exists"
   VPC_PEERING_ID=$(echo "${VPC_PEERING_IN_DIRECTION2}" | jq -r ".VpcPeeringConnectionId")  
-  VPC_PEERING_STATUS=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r "[].Status.code")
+  VPC_PEERING_STATUS=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r ".[].Status.code")
 
   ACCEPTER_REGION="${REGION2}"
   REQUESTER_REGION="${REGION1}"
