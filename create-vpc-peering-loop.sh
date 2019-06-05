@@ -48,8 +48,8 @@ do
     if [ "${ACCEPTER_REGION}" != "${REQUESTER_REGION}" ] ; then
       REQUESTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REQUESTER_REGION}")
 
-      if [ -n "$(echo "${VPC_PEERING_IN_ACCEPTER_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${ACCEPTER_REGION}\") | select(.RequesterVpcInfo.VpcId==\"${REQUESTER_REGION}\")")" ] || \
-         [ -n "$(echo "${VPC_PEERING_IN_ACCEPTER_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${REQUESTER_REGION}\") | select(.RequesterVpcInfo.VpcId==\"${ACCEPTER_REGION}\")")" ] ; then
+      if [ -n "$(echo "${VPC_PEERING_IN_ACCEPTER_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${ACCEPTER_VPC_ID}\") | select(.RequesterVpcInfo.VpcId==\"${REQUESTER_VPC_ID}\")")" ] || \
+         [ -n "$(echo "${VPC_PEERING_IN_ACCEPTER_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${REQUESTER_VPC_ID}\") | select(.RequesterVpcInfo.VpcId==\"${ACCEPTER_VPC_ID}\")")" ] ; then
         echo "VPC Peering between ${ACCEPTER_REGION} and ${REQUESTER_REGION} already exists"
       else
         echo "Creating VPC Peering between ACCEPTER_REGION=${ACCEPTER_REGION} and REQUESTER_REGION=${REQUESTER_REGION}"
