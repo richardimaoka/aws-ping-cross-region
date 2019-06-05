@@ -115,6 +115,7 @@ else
     --vpc-peering-connection-id "${VPC_PEERING_ID}" \
     --region "${ACCEPTER_REGION}" > /dev/null ; then
     exit 1
+  fi
 fi
 
 #######################################
@@ -124,8 +125,8 @@ ACCEPTER_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_
 REQUESTER_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text --region "${REQUESTER_REGION}")
 
 VPC_PEERING_CONNECTION=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && RequesterVpcInfo.VpcId=='${REQUESTER_VPC_ID}']" --region "${ACCEPTER_REGION}")
-ACCEPTER_CIDR_BLOCK=$(echo "${VPC_PEERING_INFO}" | jq -r "AccepterVpcInfo.CidrBlock")
-REQUESTER_CIDR_BLOCK=$(echo "${VPC_PEERING_INFO}" | jq -r "RequesterVpcInfo.CidrBlock")
+ACCEPTER_CIDR_BLOCK=$(echo "${VPC_PEERING_CONNECTION}" | jq -r "AccepterVpcInfo.CidrBlock")
+REQUESTER_CIDR_BLOCK=$(echo "${VPC_PEERING_CONNECTION}" | jq -r "RequesterVpcInfo.CidrBlock")
 
 echo "Adding VPC peering route to the route table of the main VPC"
 aws ec2 create-route \
