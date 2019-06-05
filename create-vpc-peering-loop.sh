@@ -72,11 +72,11 @@ done
 for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do
   ACCEPTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION}") 
-  for VPC_PEERING_ID in aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && Status.Code=='pending-acceptance'].VpcPeeringConnectionId" --region "${REGION}"
+  for VPC_PEERING_ID in $(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && Status.Code=='pending-acceptance'].VpcPeeringConnectionId" --output text --region "${REGION}")
   do
     echo "Accepting ${VPC_PEERING_ID} in ${REGION}"
     # If it fails, an error message is displayed and it continues to the next REGION
-    aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${ACCEPTER_REGION}"
+    aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${REGION}" > /dev/null
   done
 done
 
