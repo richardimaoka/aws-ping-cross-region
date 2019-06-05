@@ -68,6 +68,7 @@ VPC_PEERING_IN_DIRECTION2=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r ".[] | 
 if [ -n "${VPC_PEERING_IN_DIRECTION1}" ] ; then 
   echo "VPC Peering between ${REGION1} and ${REGION2} already exists"
   VPC_PEERING_ID=$(echo "${VPC_PEERING_IN_DIRECTION1}" | jq -r ".VpcPeeringConnectionId")
+  VPC_PEERING_STATUS=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r "[].Status.code")
 
   ACCEPTER_REGION="${REGION1}"
   REQUESTER_REGION="${REGION2}"
@@ -76,7 +77,8 @@ if [ -n "${VPC_PEERING_IN_DIRECTION1}" ] ; then
 elif  [ -n "${VPC_PEERING_IN_DIRECTION2}" ] ; then
   echo "VPC Peering between ${REGION2} and ${REGION1} already exists"
   VPC_PEERING_ID=$(echo "${VPC_PEERING_IN_DIRECTION2}" | jq -r ".VpcPeeringConnectionId")  
-  
+  VPC_PEERING_STATUS=$(echo "${VPC_PEERING_IN_REGION1_VPC}" | jq -r "[].Status.code")
+
   ACCEPTER_REGION="${REGION2}"
   REQUESTER_REGION="${REGION1}"
   ACCEPTER_VPC_ID="${REGION2_VPC_ID}"
@@ -94,7 +96,7 @@ else
     exit 1
   fi
   VPC_PEERING_ID=$(echo "${VPC_PEERING_OUTPUT}" | jq -r ".VpcPeeringConnection.VpcPeeringConnectionId")
-  echo "VPC_PEERING_OUTPUT = ${VPC_PEERING_OUTPUT}"
+  VPC_PEERING_STATUS=$(echo "${VPC_PEERING_OUTPUT}" | jq -r ".VpcPeeringConnection.Status.Code")
   ACCEPTER_REGION="${REGION1}"
   REQUESTER_REGION="${REGION2}"
   ACCEPTER_VPC_ID="${REGION1_VPC_ID}"
@@ -104,8 +106,9 @@ fi
 #######################################
 # Step 2. Accept VPC Peering connection
 #######################################
-
-if ! aws ec2 wait vpc-peering-connection-exists --vpc-peering-connection-id "${VPC_PEERING_ID}" ; then
+if [ "active" = "${VPC_PEERING_STATUS}" ] ; then
+  echo "VPC Peering ${VPC_PEERING_ID} is already accepted and active"
+elif ! aws ec2 wait vpc-peering-connection-exists --vpc-peering-connection-id "${VPC_PEERING_ID}" ; then
   >&2 echo "ERROR: Failed to wait on ${VPC_PEERING_ID}"
   exit 1
 else 
@@ -125,8 +128,8 @@ ACCEPTER_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_
 REQUESTER_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text --region "${REQUESTER_REGION}")
 
 VPC_PEERING_CONNECTION=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && RequesterVpcInfo.VpcId=='${REQUESTER_VPC_ID}']" --region "${ACCEPTER_REGION}")
-ACCEPTER_CIDR_BLOCK=$(echo "${VPC_PEERING_CONNECTION}" | jq -r "AccepterVpcInfo.CidrBlock")
-REQUESTER_CIDR_BLOCK=$(echo "${VPC_PEERING_CONNECTION}" | jq -r "RequesterVpcInfo.CidrBlock")
+ACCEPTER_CIDR_BLOCK=$(echo "${VPC_PEERING_CONNECTION}" | jq -r ".[].AccepterVpcInfo.CidrBlock")
+REQUESTER_CIDR_BLOCK=$(echo "${VPC_PEERING_CONNECTION}" | jq -r ".[].RequesterVpcInfo.CidrBlock")
 
 echo "Adding VPC peering route to the route table of the main VPC"
 aws ec2 create-route \
