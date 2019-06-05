@@ -41,15 +41,19 @@ AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 for ACCEPTER_REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
 do 
   ACCEPTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${ACCEPTER_REGION}")
-  EXISTING_VPC_PEERING_REGIONS=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}'].RequesterVpcInfo.Region" --region "${ACCEPTER_REGION}")
+  VPC_PEERING_IN_ACCEPTER_VPC=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?Status.Code!='deleted']" --region "${ACCEPTER_REGION}")
+  
   for REQUESTER_REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
   do
     if [ "${ACCEPTER_REGION}" != "${REQUESTER_REGION}" ] ; then
-      if [ "true" = $(echo "${EXISTING_VPC_PEERING_REGIONS}" | jq -r "contains([\"${REQUESTER_REGION}\"])") ]; then
+      REQUESTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REQUESTER_REGION}")
+
+
+      if [ -n $(echo "${VPC_PEERING_IN_ACCEPTER_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${ACCEPTER_REGION}\") | select(.RequesterVpcInfo.VpcId==\"${REQUESTER_REGION}\")") ] || \
+         [ -n $(echo "${VPC_PEERING_IN_ACCEPTER_VPC}" | jq -r ".[] | select(.AccepterVpcInfo.VpcId==\"${REQUESTER_REGION}\") | select(.RequesterVpcInfo.VpcId==\"${ACCEPTER_REGION}\")") ] ; then
         echo "VPC Peering between ${ACCEPTER_REGION} and ${REQUESTER_REGION} already exists"
       else
         echo "Creating VPC Peering between ACCEPTER_REGION=${ACCEPTER_REGION} and REQUESTER_REGION=${REQUESTER_REGION}"
-        REQUESTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REQUESTER_REGION}")
         # If it fails, an error message is displayed and it continues to the next REGION
         VPC_PEERING_OUTPUT=$(aws ec2 create-vpc-peering-connection \
           --peer-owner-id "${AWS_ACCOUNT_ID}" \
@@ -66,15 +70,15 @@ done
 ################################################
 # Step 3: Accept VPC Peering requests
 ################################################
-for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
-do 
-  for VPC_PEERING_ID in aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && Status.Code=='pending'].VpcPeeringConnectionId" --region "${REGION}")
-  do
-    echo "Accepting ${VPC_PEERING_ID} in ${REGION}"
-    # If it fails, an error message is displayed and it continues to the next REGION
-    aws ec2 accept-vpc-peeringq-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${ACCEPTER_REGION}"
-  done
-done
+# for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
+# do 
+#   for VPC_PEERING_ID in aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && Status.Code=='pending'].VpcPeeringConnectionId" --region "${REGION}")
+#   do
+#     echo "Accepting ${VPC_PEERING_ID} in ${REGION}"
+#     # If it fails, an error message is displayed and it continues to the next REGION
+#     aws ec2 accept-vpc-peeringq-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${ACCEPTER_REGION}"
+#   done
+# done
 
 # ################################################
 # # Step 3: Add route for VPC peering
