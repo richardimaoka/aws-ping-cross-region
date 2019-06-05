@@ -24,9 +24,9 @@ do
   VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION}")
   aws cloudformation delete-stack --stack-name "${STACK_NAME}" --region "${REGION}"
   
-  for VPC_PEERING_ID in $(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}'].VpcPeeringConnectionId" --region "${REGION}")
+  for VPC_PEERING_ID in $(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${VPC_ID}'].VpcPeeringConnectionId" --output text --region "${REGION}")
   do
     echo "Deleting ${VPC_PEERING_ID}"
-    aws ec2 delete-vpc-peering-connection --vpc-peering-connection-id
+    aws ec2 delete-vpc-peering-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${REGION}"
   done
 done 
