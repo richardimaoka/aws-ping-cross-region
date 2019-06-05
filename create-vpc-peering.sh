@@ -19,7 +19,7 @@ do
       STACK_NAME="$2"
       shift 2
       ;;
-    '--reqion1' )
+    '--region1' )
       if [ -z "$2" ]; then
           echo "option --region1 requires an argument -- $1" 1>&2
           exit 1
@@ -27,7 +27,7 @@ do
       REGION1="$2"
       shift 2
       ;;
-    '--reqion2' )
+    '--region2' )
       if [ -z "$2" ]; then
           echo "option --region2 requires an argument -- $1" 1>&2
           exit 1
