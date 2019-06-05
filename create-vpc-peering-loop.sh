@@ -68,16 +68,17 @@ done
 
 ################################################
 # Step 3: Accept VPC Peering requests
-################################################
-# for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
-# do 
-#   for VPC_PEERING_ID in aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && Status.Code=='pending'].VpcPeeringConnectionId" --region "${REGION}")
-#   do
-#     echo "Accepting ${VPC_PEERING_ID} in ${REGION}"
-#     # If it fails, an error message is displayed and it continues to the next REGION
-#     aws ec2 accept-vpc-peeringq-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${ACCEPTER_REGION}"
-#   done
-# done
+###############################################
+for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
+do
+  ACCEPTER_VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION}") 
+  for VPC_PEERING_ID in aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && Status.Code=='pending-acceptance'].VpcPeeringConnectionId" --region "${REGION}"
+  do
+    echo "Accepting ${VPC_PEERING_ID} in ${REGION}"
+    # If it fails, an error message is displayed and it continues to the next REGION
+    aws ec2 accept-vpc-peering-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${ACCEPTER_REGION}"
+  done
+done
 
 # ################################################
 # # Step 3: Add route for VPC peering
@@ -89,7 +90,6 @@ done
 #   do
 #     VPC_PEERING_CONNECTION=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}'].RequesterVpcInfo.Region" --region "${SOURCE_REGION}")
 #     VPC_CIDR_BLOCK=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCCidrBlock'].OutputValue" --output text --region "${REGION}")
-
 #     if [ -z "$(aws ec2 describe-route-tables --route-table-id "${MAIN_ROUTE_TABLE}" --query "RouteTables[].Routes[?DestinationCidrBlock=='${VPC_CIDR_BLOCK}'].VpcPeeringConnectionId" --output text)" ]; then
 #       # Doing this in the shell script, because doing the same in CloudFormation is pretty
 #       # tediuos as described in README.md, so doing it in AWS CLI
