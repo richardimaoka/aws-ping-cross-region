@@ -17,7 +17,28 @@ if [ -z "${STACK_NAME}" ] ; then
   echo "ERROR: Option --stack-name needs to be specified"
   exit 1
 fi
-for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
+
+###################################################
+# Step 1: Delete VPC Peering
+###################################################
+REGIONS=$(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
+
+for REGION in ${REGIONS}
+do 
+  VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION}")
+  VPC_CONNECTIONS=$(aws ec2 describe-vpc-peering-connections --region "${REGION}")
+  
+  for VPC_PEERING_ID in $(echo "${VPC_CONNECTIONS}" | jq -r ".VpcPeeringConnections[] | select(.AccepterVpcInfo.VpcId==\"${VPC_ID}\" or .RequesterVpcInfo.VpcId==\"${VPC_ID}\") | select(.Status.Code!=\"deleted\") | .VpcPeeringConnectionId")
+  do
+    echo "Deleting ${VPC_PEERING_ID}"
+    aws ec2 delete-vpc-peering-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${REGION}"
+  done
+done 
+
+###################################################
+# Step 2: Delete CloudFormation VPC Stacks
+###################################################
+for REGION in ${REGIONS}
 do 
   echo "Deleting the CloudFormation stack=${STACK_NAME} for region=${REGION} if exists."
   aws cloudformation delete-stack --stack-name "${STACK_NAME}" --region "${REGION}"
