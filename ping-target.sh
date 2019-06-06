@@ -84,7 +84,7 @@ echo "Start pinging the target, and saving to a file, ping_result.json"
 ping -c 30 "${TARGET_IP}" | ping-script/ping_to_json.sh | tee ping_result.json
 
 echo "Saving the metadata to a file, ping_metadata.json"
-echo "{ \"meta_data\": {\"source_region\": \"${SOURCE_REGION}\", \"target_region\": \"${TARGET_REGION}\", \"test_uuid\": \"${TEST_EXECUTION_UUID}\"  } }" | tee ping_metadata.json
+echo "{ \"metadata\": {\"source_region\": \"${SOURCE_REGION}\", \"target_region\": \"${TARGET_REGION}\", \"test_uuid\": \"${TEST_EXECUTION_UUID}\"  } }" | tee ping_metadata.json
 
 echo "Merging ping_result.json nd ping_metadata.json into result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log.json"
 jq -s '.[0] * .[1]' ping_result.json ping_metadata.json | jq -c "." > "result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log"

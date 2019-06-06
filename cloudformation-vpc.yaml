@@ -201,3 +201,8 @@ Outputs:
     Value: !Ref SubnetInAZ1
     Export:
       Name: !Sub "${AWS::StackName}-Subnet"
+  InstanceProfile:
+    Description: Instance profile for EC2 to use AWS CLI and EC2 SSM
+    Value: !Ref InstanceProfileSSM
+    Export:
+      Name: !Sub "${AWS::StackName}-InstanceProfile"

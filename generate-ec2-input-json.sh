@@ -22,10 +22,12 @@ do
   OUTPUTS=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[]" --region "${REGION}") 
   SECURITY_GROUP_ID=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="SecurityGroup") | .OutputValue')
   SUBNET_ID=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="Subnet") | .OutputValue')
+  IAM_INSTANCE_PROFILE=$(echo "${OUTPUTS}" | jq -r '.[] | select(.OutputKey=="InstanceProfile") | .OutputValue')
 
   echo "\"${REGION}\": {" >> "${FILE_NAME}"
   echo "  \"image_id\": \"${AMI_LINUX2}\"," >> "${FILE_NAME}"
   echo "  \"security_group\": \"${SECURITY_GROUP_ID}\"," >> "${FILE_NAME}"
+  echo "  \"instance_profile\": \"${IAM_INSTANCE_PROFILE}\"," >> "${FILE_NAME}"
   echo "  \"subnet_id\": \"${SUBNET_ID}\"" >> "${FILE_NAME}"
   if [ "$REGION" = "${LAST_REGION}" ]; then 
     echo "}" >> "${FILE_NAME}"

@@ -70,11 +70,13 @@ SOURCE_INSTANCE_TYPE=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".instanc
 SOURCE_IMAGE_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".image_id")
 SOURCE_SECURITY_GROUP_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".security_group")
 SOURCE_SUBNET_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".subnet_id")
+SOURCE_INSTANCE_PROFILE=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".instance_profile")
 
 if ! SOURCE_OUTPUTS=$(aws ec2 run-instances \
   --image-id "${SOURCE_IMAGE_ID}" \
   --instance-type "${SOURCE_INSTANCE_TYPE}" \
   --key-name "demo-key-pair" \
+  --iam-instance-profile Name="${SOURCE_INSTANCE_PROFILE}" \
   --network-interfaces \
     "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${SOURCE_SECURITY_GROUP_ID},SubnetId=${SOURCE_SUBNET_ID}" \
   --tag-specifications \
@@ -93,11 +95,13 @@ TARGET_INSTANCE_TYPE=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".instanc
 TARGET_IMAGE_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".image_id")
 TARGET_SECURITY_GROUP_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".security_group")
 TARGET_SUBNET_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".subnet_id")
+TARGET_INSTANCE_PROFILE=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".instance_profile")
 
 if ! TARGET_OUTPUTS=$(aws ec2 run-instances \
   --image-id "${TARGET_IMAGE_ID}" \
   --instance-type "${TARGET_INSTANCE_TYPE}" \
   --key-name "demo-key-pair" \
+  --iam-instance-profile Name="${TARGET_INSTANCE_PROFILE}" \
   --network-interfaces \
     "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${TARGET_SECURITY_GROUP_ID},SubnetId=${TARGET_SUBNET_ID}" \
   --tag-specifications \
