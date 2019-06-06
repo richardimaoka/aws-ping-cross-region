@@ -32,10 +32,12 @@ done
 #################################
 if [ -z "${FILE_NAME}" ] ; then
   if ! EC2_INPUT_JSON=$(./generate-ec2-input-json.sh); then 
+    >&2 echo "ERROR: Failed to generate the input json with ./generate-ec2-input-json.sh"
     exit 1
   fi
 else
-  if ! EC2_INPUT_JSON=$(cat "${FILE_NAME}" | jq -r "."); then
+  if ! EC2_INPUT_JSON=$(jq -r "." < "${FILE_NAME}"); then
+    >&2 echo "ERROR: Failed to read input JSON from ${FILE_NAME}"
     exit 1
   fi
 fi
@@ -61,6 +63,7 @@ do
 
       SOURCE_INSTANCE_ID=$(echo "${EC2_OUTPUT}" | jq -r ".source.instance_id")
       TARGET_INSTANCE_ID=$(echo "${EC2_OUTPUT}" | jq -r ".target.instance_id")
+      TARGET_IP_ADDRESS=$(echo "${EC2_OUTPUT}" | jq -r ".target.private_ip_address")
 
       echo "Waiting for the EC2 instances to be status = ok: source = ${SOURCE_INSTANCE_ID} and target = ${TARGET_INSTANCE_ID}"
       if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
