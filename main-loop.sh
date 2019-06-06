@@ -31,7 +31,7 @@ done
 # 1. Prepare the input json
 #################################
 if [ -z "${FILE_NAME}" ] ; then
-  EC2_INPUT_JSON=$(./create-ec2-input-json.sh)
+  EC2_INPUT_JSON=$(./generate-ec2-input-json.sh)
   if [ $? -ne 0 ] ; then
     exit 1
   fi
@@ -45,16 +45,16 @@ fi
 ######################################################
 # 2. Create EC2 instances and send the ping command
 ######################################################
+REGIONS=$(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
 
-for SOURCE_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
+for SOURCE_REGION in ${REGIONS}
 do
-  for TARGET_REGION in $(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
+  for TARGET_REGION in ${REGIONS}
   do
     if [ "${SOURCE_REGION}" != "${TARGET_REGION}" ]; then
       echo "testing ping from the source region=${SOURCE_REGION} to the target region=${TARGET_REGION}"
   
-      EC2_OUTPUT=$(echo "${EC2_INPUT_JSON}" | ./create-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}")
-      if [ $? -ne 0 ] ; then
+      if ! EC2_OUTPUT=$(echo "${EC2_INPUT_JSON}" | ./create-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}") ; then
         exit 1
       fi
 

@@ -50,7 +50,7 @@ SOURCE_IMAGE_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".image_id")
 SOURCE_SECURITY_GROUP_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".security_group")
 SOURCE_SUBNET_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$SOURCE_REGION\".subnet_id")
 
-SOURCE_OUTPUTS=$(aws ec2 run-instances \
+if ! SOURCE_OUTPUTS=$(aws ec2 run-instances \
   --image-id "${SOURCE_IMAGE_ID}" \
   --instance-type "${SOURCE_INSTANCE_TYPE}" \
   --key-name "demo-key-pair" \
@@ -60,7 +60,9 @@ SOURCE_OUTPUTS=$(aws ec2 run-instances \
     "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
   --user-data file://user-data.txt \
   --region "${SOURCE_REGION}"
-)
+) ; then
+  exit 1
+fi
 
 ######################################
 # 2. Create the target EC2 instance
@@ -71,7 +73,7 @@ TARGET_IMAGE_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".image_id")
 TARGET_SECURITY_GROUP_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".security_group")
 TARGET_SUBNET_ID=$(echo "${INPUT_JSON}" | jq -r ".\"$TARGET_REGION\".subnet_id")
 
-TARGET_OUTPUTS=$(aws ec2 run-instances \
+if ! TARGET_OUTPUTS=$(aws ec2 run-instances \
   --image-id "${TARGET_IMAGE_ID}" \
   --instance-type "${TARGET_INSTANCE_TYPE}" \
   --key-name "demo-key-pair" \
@@ -81,7 +83,9 @@ TARGET_OUTPUTS=$(aws ec2 run-instances \
     "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
   --user-data file://user-data.txt \
   --region "${TARGET_REGION}"
-)
+) ; then
+  exit 1
+fi
 
 SOURCE_INSTANCE_ID=$(echo "${SOURCE_OUTPUTS}" | jq -r ".Instances[].InstanceId")
 SOURCE_PRIVATE_IP=$(echo "${SOURCE_OUTPUTS}" | jq -r ".Instances[].NetworkInterfaces[].PrivateIpAddress")
