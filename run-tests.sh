@@ -95,19 +95,19 @@ do
       # 2.3 Terminate the EC2 instances
       ######################################################
       echo "Terminate the EC2 instances"
-      if ! aws ec2 terminate-instances --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
+      if ! aws ec2 terminate-instances --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" > /dev/null ; then
         >&2 echo "ERROR: failed terminate the source EC2 instance = ${SOURCE_INSTANCE_ID}"
         exit 1
       fi
-      if ! aws ec2 terminate-instances --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" ; then
+      if ! aws ec2 terminate-instances --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" > /dev/null ; then
         >&2 echo "ERROR: failed terminate the target EC2 instance = ${TARGET_INSTANCE_ID}"
         exit 1
       fi
-      if ! aws ec2 wait instance-terminated --instance-ids "$SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
+      if ! aws ec2 wait instance-terminated --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" > /dev/null ; then
         >&2 echo "ERROR: failed to wait on the termination of the EC2 instance = ${SOURCE_INSTANCE_ID}"
         exit 1
       fi
-      if ! aws ec2 wait instance-terminated --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" ; then
+      if ! aws ec2 wait instance-terminated --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" > /dev/null ; then
         >&2 echo "ERROR: failed to wait  on the termination of the EC2 instance = ${SOURCE_INSTANCE_ID}"
         exit 1
       fi
