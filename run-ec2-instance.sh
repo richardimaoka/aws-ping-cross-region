@@ -27,7 +27,7 @@ do
           echo "option -f or --file-name requires an argument -- $1" 1>&2
           exit 1
       fi
-      TARGET_REGION="$2"
+      FILE_NAME="$2"
       shift 2
       ;;
   esac

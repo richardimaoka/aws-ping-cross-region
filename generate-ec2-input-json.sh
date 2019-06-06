@@ -24,7 +24,7 @@ do
   echo "\"${REGION}\": {"
   echo "  \"image_id\": \"${AMI_LINUX2}\","
   echo "  \"security_group\": \"${SECURITY_GROUP_ID}\","
-  echo "  \"subnet_id\": \"${SUBNET_ID}\"
+  echo "  \"subnet_id\": \"${SUBNET_ID}\""
   if [ "$REGION" = "${LAST_REGION}" ]; then
     echo "}"
   else
