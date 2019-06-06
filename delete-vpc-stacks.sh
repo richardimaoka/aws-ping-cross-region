@@ -18,11 +18,30 @@ if [ -z "${STACK_NAME}" ] ; then
   exit 1
 fi
 
-###################################################
-# Step 1: Delete VPC Peering
-###################################################
 REGIONS=$(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
 
+######################################################
+# Step 1: Delete Routes for VPC Peering in route tables
+#######################################################
+for REGION in ${REGIONS}
+do
+  echo "Deleting VPC-peering routes in ${REGION}s route table"
+  ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text --region "${REGION}")
+  
+  for CIDR_BLOCK in $(aws ec2 describe-route-tables \
+    --route-table-ids "${ROUTE_TABLE}"\
+    --query "RouteTables[].Routes[?VpcPeeringConnectionId].DestinationCidrBlock" \
+    --region "${REGION}"
+  )
+  do
+    echo "Deleting Route destinated to "${CIDR_BLOCK}" from ${ROUTE_TABLE}"
+    aws ec2 delete-route --route-table-id "${ROUTE_TABLE}" --destination-cidr-block "${CIDR_BLOCK}"
+  done
+done
+
+###################################################
+# Step 2: Delete VPC Peering
+###################################################
 for REGION in ${REGIONS}
 do 
   VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION}")
@@ -36,7 +55,7 @@ do
 done 
 
 ###################################################
-# Step 2: Delete CloudFormation VPC Stacks
+# Step 3: Delete CloudFormation VPC Stacks
 ###################################################
 for REGION in ${REGIONS}
 do 
