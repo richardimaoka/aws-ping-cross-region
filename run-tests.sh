@@ -50,8 +50,11 @@ do
   for TARGET_REGION in ${REGIONS}
   do
     if [ "${SOURCE_REGION}" != "${TARGET_REGION}" ]; then
-      echo "testing ping from the source region=${SOURCE_REGION} to the target region=${TARGET_REGION}"
-  
+
+      ######################################################
+      # 2.1 Run the EC2 instances and wait
+      ######################################################
+      echo "Running the EC2 instances in the source region=${SOURCE_REGION} and the target region=${TARGET_REGION}" 
       if ! EC2_OUTPUT=$(echo "${EC2_INPUT_JSON}" | ./run-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}") ; then
         exit 1
       fi
@@ -68,15 +71,36 @@ do
         exit 1
       fi
 
+      ######################################################
+      # 2.2 Send the command and sleep to wait
+      ######################################################
       echo "Sending command to the source EC"
-      aws ssm send-command \
+      if ! aws ssm send-command \
         --instance-ids "${SOURCE_INSTANCE_ID}" \
         --document-name "AWS-RunShellScript" \
         --comment "aws-ping command to run ping to all relevant EC2 instances in all the regions" \
         --parameters commands=["/home/ec2-user/aws-ping-cross-region/ping-target.sh --source-region ${SOURCE_REGION} --target-region ${TARGET_REGION} --target-ip ${TARGET_IP_ADDRESS} --test-uuid ${TEST_EXECUTION_UUID}" --s3-bucket "${S3_BUCKET_NAME }"] \
         --output text \
-        --query "Command.CommandId"
-      break
+        --query "Command.CommandId" > /dev/null ; then
+        >&2 echo "ERROR: failed to send command to = ${SOURCE_INSTANCE_ID}"
+      fi
+
+      # There's no quick and wasy way to signal the end of the test, so just sleep enough to wait
+      echo "Sleeping to let the test finish"
+      sleep 90s
+
+      ######################################################
+      # 2.3 Terminate the EC2 instances
+      ######################################################
+      echo "Bring down the EC2 instances"
+      if ! aws ec2 "${TARGET_INSTANCE_ID}" --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
+        >&2 echo "ERROR: failed terminate the source EC2 instance = ${SOURCE_INSTANCE_ID}"
+        exit 1
+      fi
+      if ! aws ec2 wait instance-status-ok --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" ; then
+        >&2 echo "ERROR: failed to wait on the target EC2 instance = ${SOURCE_INSTANCE_ID}"
+        exit 1
+      fi
     fi
   done
   break

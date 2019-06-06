@@ -151,3 +151,48 @@ do
     echo "Cloudformatoin stack in ${REGION} already exists"
   fi
 done 
+
+
+## Athena 
+
+https://aws.amazon.com/blogs/big-data/create-tables-in-amazon-athena-from-nested-json-and-mappings-using-jsonserde/
+
+https://docs.aws.amazon.com/en_us/athena/latest/ug/creating-tables.html#all-tables-are-external
+
+```
+CREATE EXTERNAL TABLE results (
+  metadata struct<source_region:STRING,
+                  target_region:STRING,
+                  test_uuid:STRING
+                 >,
+  rtt_summary struct<packets_transmitted:INT,
+                     packets_received:INT,
+                     packets_loss_percentage:DOUBLE,
+                     time:struct<unit:string,value:DOUBLE>
+                    >,
+  rtt_statistics struct<min:struct<unit:string,value:DOUBLE>,
+                        avg:struct<unit:string,value:DOUBLE>,
+                        max:struct<unit:string,value:DOUBLE>,
+                        mdev:struct<unit:string,value:DOUBLE>
+                       >
+)                 
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+LOCATION 's3://samplebucket-richardimaoka-sample-sample/aws-ping-cross-region'
+```
+
+
+```
+SELECT 
+  metadata.test_uuid,
+  metadata.target_region,
+  metadata.source_region,
+  rtt_statistics.min.value as min_value,
+  rtt_statistics.min.unit  as min_unit,
+  rtt_statistics.max.value as max_value,
+  rtt_statistics.max.unit  as max_unit,
+  rtt_statistics.avg.value as avg_value,
+  rtt_statistics.avg.unit  as avg_unit
+FROM
+  "aws_ping_cross_region"."results"
+limit 10;
+```

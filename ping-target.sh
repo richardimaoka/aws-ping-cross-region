@@ -3,6 +3,9 @@
 # cd to the current directory as it runs other shell scripts
 cd "$(dirname "$0")" || exit
 
+#######################################################
+# Step 1: Parse options and error check
+#######################################################
 for OPT in "$@"
 do
   case "$OPT" in
@@ -83,12 +86,18 @@ echo "TARGET_IP=${TARGET_IP}"
 echo "TEST_EXECUTION_UUID=${TEST_EXECUTION_UUID}"
 echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
 
+##########################################################
+# Step 2: Generate the json from ping result and metadata
+##########################################################
 echo "Start pinging the target, and saving to a file, ping_result.json"
-ping -c 30 "${TARGET_IP}" | ping-script/ping_to_json.sh | tee ping_result.json
+ping -c 30 "${TARGET_IP}" | ping-to-json/ping_to_json.sh | tee ping_result.json
 
 echo "Saving the metadata to a file, ping_metadata.json"
 echo "{ \"metadata\": {\"source_region\": \"${SOURCE_REGION}\", \"target_region\": \"${TARGET_REGION}\", \"test_uuid\": \"${TEST_EXECUTION_UUID}\"  } }" | tee ping_metadata.json
 
+#######################################################
+# Step 3: Merge the json files and upload to S3
+#######################################################
 echo "Merging ping_result.json nd ping_metadata.json into result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log.json"
 jq -s '.[0] * .[1]' ping_result.json ping_metadata.json | jq -c "." > "result-from-${SOURCE_REGION}-to-${TARGET_REGION}.log"
 

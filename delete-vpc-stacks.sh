@@ -20,7 +20,7 @@ fi
 
 REGIONS=$(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
 
-######################################################
+#######################################################
 # Step 1: Delete Routes for VPC Peering in route tables
 #######################################################
 for REGION in ${REGIONS}
