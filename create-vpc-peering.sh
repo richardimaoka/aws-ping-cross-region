@@ -124,14 +124,14 @@ fi
 ACCEPTER_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text --region "${ACCEPTER_REGION}")
 REQUESTER_ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text --region "${REQUESTER_REGION}")
 
-VPC_PEERING_CONNECTION=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && RequesterVpcInfo.VpcId=='${REQUESTER_VPC_ID}']" --region "${ACCEPTER_REGION}")
+VPC_PEERING_CONNECTION=$(aws ec2 describe-vpc-peering-connections --query "VpcPeeringConnections[?AccepterVpcInfo.VpcId=='${ACCEPTER_VPC_ID}' && RequesterVpcInfo.VpcId=='${REQUESTER_VPC_ID}' && Status.Code!='deleted']" --region "${ACCEPTER_REGION}")
 ACCEPTER_CIDR_BLOCK=$(echo "${VPC_PEERING_CONNECTION}" | jq -r ".[].AccepterVpcInfo.CidrBlock")
 REQUESTER_CIDR_BLOCK=$(echo "${VPC_PEERING_CONNECTION}" | jq -r ".[].RequesterVpcInfo.CidrBlock")
 
 if [ -n "$(aws ec2 describe-route-tables --route-table-ids "${ACCEPTER_ROUTE_TABLE}" --query "RouteTables[].Routes[?DestinationCidrBlock=='${REQUESTER_CIDR_BLOCK}']" --output text --region "${ACCEPTER_REGION}")" ] ; then
   echo "Route table ${ACCEPTER_ROUTE_TABLE} in ${ACCEPTER_REGION} already has a route for ${VPC_PEERING_ID}"
 else
-  echo "Adding a route to a route table ${ACCEPTER_ROUTE_TABLE} in ${ACCEPTER_REGION} for ${VPC_PEERING_ID}"
+  echo "Adding a route to ${ACCEPTER_ROUTE_TABLE} in ${ACCEPTER_REGION} for ${VPC_PEERING_ID}"
   aws ec2 create-route \
     --route-table-id "${ACCEPTER_ROUTE_TABLE}" \
     --destination-cidr-block "${REQUESTER_CIDR_BLOCK}" \
@@ -143,7 +143,7 @@ fi
 if [ -n "$(aws ec2 describe-route-tables --route-table-ids "${REQUESTER_ROUTE_TABLE}" --query "RouteTables[].Routes[?DestinationCidrBlock=='${ACCEPTER_CIDR_BLOCK}']" --output text --region "${REQUESTER_REGION}")" ] ; then
   echo "Route table ${REQUESTER_ROUTE_TABLE} in ${REQUESTER_REGION} already has a route for ${VPC_PEERING_ID}"
 else
-  echo "Adding a route to a route table ${REQUESTER_ROUTE_TABLE} in ${REQUESTER_REGION} for ${VPC_PEERING_ID}"
+  echo "Adding a route to ${REQUESTER_ROUTE_TABLE} in ${REQUESTER_REGION} for ${VPC_PEERING_ID}"
   aws ec2 create-route \
     --route-table-id "${REQUESTER_ROUTE_TABLE}" \
     --destination-cidr-block "${ACCEPTER_CIDR_BLOCK}" \
