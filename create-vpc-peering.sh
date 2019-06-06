@@ -105,7 +105,7 @@ fi
 #######################################
 if [ "active" = "${VPC_PEERING_STATUS}" ] ; then
   echo "VPC Peering ${VPC_PEERING_ID} is already accepted and active"
-elif ! aws ec2 wait vpc-peering-connection-exists --vpc-peering-connection-id "${VPC_PEERING_ID}" ; then
+elif ! aws ec2 wait vpc-peering-connection-exists --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${ACCEPTER_REGION}"; then
   >&2 echo "ERROR: Failed to wait on ${VPC_PEERING_ID}"
   exit 1
 else 
