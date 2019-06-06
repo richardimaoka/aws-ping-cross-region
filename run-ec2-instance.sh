@@ -1,29 +1,41 @@
 #!/bin/sh
 
-INPUT_JSON=$(cat)
-
+######################################
+# Parse options
+######################################
 for OPT in "$@"
 do
-    case "$OPT" in
-      '--source-region' )
-        if [ -z "$2" ]; then
-            echo "option --source-region requires an argument -- $1" 1>&2
-            exit 1
-        fi
-        SOURCE_REGION="$2"
-        shift 2
-        ;;
-      '--target-region' )
-        if [ -z "$2" ]; then
-            echo "option --target-region requires an argument -- $1" 1>&2
-            exit 1
-        fi
-        TARGET_REGION="$2"
-        shift 2
-        ;;
-    esac
+  case "$OPT" in
+    '--source-region' )
+      if [ -z "$2" ]; then
+          echo "option --source-region requires an argument -- $1" 1>&2
+          exit 1
+      fi
+      SOURCE_REGION="$2"
+      shift 2
+      ;;
+    '--target-region' )
+      if [ -z "$2" ]; then
+          echo "option --target-region requires an argument -- $1" 1>&2
+          exit 1
+      fi
+      TARGET_REGION="$2"
+      shift 2
+      ;;
+    '-f' | '--file-name' )
+      if [ -z "$2" ]; then
+          echo "option -f or --file-name requires an argument -- $1" 1>&2
+          exit 1
+      fi
+      TARGET_REGION="$2"
+      shift 2
+      ;;
+  esac
 done
 
+######################################
+# Validate options
+######################################
 if [ -z "${SOURCE_REGION}" ] ; then
   >&2 echo "ERROR: option --source-region needs to be passed"
   ERROR="1"
@@ -32,10 +44,24 @@ if [ -z "${TARGET_REGION}" ] ; then
   >&2 echo "ERROR: option --target-region needs to be passed"
   ERROR="1"
 fi
-if ! echo "${INPUT_JSON}" | jq -r "." > /dev/null ; then
-  >&2 echo "ERROR: the input is not valid json:"
-  >&2 echo "${INPUT_JSON}"
-  ERROR="1"
+if [ -z "${FILE_NAME}" ] ; then
+  if ! INPUT_JSON=$(cat); then 
+    >&2 echo "ERROR: Failed to read input JSON from stdin"
+    ERROR="1"
+  else if ! echo "${INPUT_JSON}" | jq -r "." > /dev/null ; then
+    >&2 echo "ERROR: the input is not valid json:"
+    >&2 echo "${INPUT_JSON}"
+    ERROR="1"
+  fi
+else
+  if ! INPUT_JSON=$(cat "${FILE_NAME}" | jq -r "."); then
+    >&2 echo "ERROR: Failed to read input JSON from stdin"
+    ERROR="1"
+  else if ! echo "${INPUT_JSON}" | jq -r "." > /dev/null ; then
+    >&2 echo "ERROR: the input is not valid json:"
+    >&2 echo "${INPUT_JSON}"
+    ERROR="1"
+  fi
 fi
 if [ -n "${ERROR}" ] ; then
   exit 1

@@ -31,13 +31,11 @@ done
 # 1. Prepare the input json
 #################################
 if [ -z "${FILE_NAME}" ] ; then
-  EC2_INPUT_JSON=$(./generate-ec2-input-json.sh)
-  if [ $? -ne 0 ] ; then
+  if ! EC2_INPUT_JSON=$(./generate-ec2-input-json.sh); then 
     exit 1
   fi
 else
-  EC2_INPUT_JSON=$(cat "${FILE_NAME}" | jq -r ".")
-  if [ $? -ne 0 ] ; then
+  if ! EC2_INPUT_JSON=$(cat "${FILE_NAME}" | jq -r "."); then
     exit 1
   fi
 fi
