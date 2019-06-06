@@ -44,25 +44,20 @@ if [ -z "${TARGET_REGION}" ] ; then
   >&2 echo "ERROR: option --target-region needs to be passed"
   ERROR="1"
 fi
+
+# Input from stdin or --filename option
 if [ -z "${FILE_NAME}" ] ; then
-  if ! INPUT_JSON=$(cat); then 
+  if ! INPUT_JSON=$(cat | jq -r ".") ; then 
     >&2 echo "ERROR: Failed to read input JSON from stdin"
-    ERROR="1"
-  else if ! echo "${INPUT_JSON}" | jq -r "." > /dev/null ; then
-    >&2 echo "ERROR: the input is not valid json:"
-    >&2 echo "${INPUT_JSON}"
     ERROR="1"
   fi
 else
-  if ! INPUT_JSON=$(cat "${FILE_NAME}" | jq -r "."); then
-    >&2 echo "ERROR: Failed to read input JSON from stdin"
-    ERROR="1"
-  else if ! echo "${INPUT_JSON}" | jq -r "." > /dev/null ; then
-    >&2 echo "ERROR: the input is not valid json:"
-    >&2 echo "${INPUT_JSON}"
+  if ! INPUT_JSON=$(jq -r "." < "${FILE_NAME}"); then
+    >&2 echo "ERROR: Failed to read input JSON from ${FILE_NAME}"
     ERROR="1"
   fi
 fi
+
 if [ -n "${ERROR}" ] ; then
   exit 1
 fi
@@ -121,7 +116,7 @@ TARGET_PRIVATE_IP=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].NetworkInterf
 echo "{ "
 echo "  \"source\": {"
 echo "    \"instance_id\": \"${SOURCE_INSTANCE_ID}\","
-echo "    \"private_ip_address\": \"${SOURCE_PRIVATE_I}\","
+echo "    \"private_ip_address\": \"${SOURCE_PRIVATE_IP}\","
 echo "    \"region\": \"${SOURCE_REGION}\""
 echo "  },"
 echo "  \"target\": {"
