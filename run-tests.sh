@@ -82,9 +82,8 @@ do
         --instance-ids "${SOURCE_INSTANCE_ID}" \
         --document-name "AWS-RunShellScript" \
         --comment "aws-ping command to run ping to all relevant EC2 instances in all the regions" \
-        --parameters commands=["/home/ec2-user/aws-ping-cross-region/ping-target.sh --source-region ${SOURCE_REGION} --target-region ${TARGET_REGION} --target-ip ${TARGET_IP_ADDRESS} --test-uuid ${TEST_EXECUTION_UUID}" --s3-bucket "${S3_BUCKET_NAME}"] \
-        --output text \
-        --query "Command.CommandId" > /dev/null ; then
+        --parameters commands=["/home/ec2-user/aws-ping-cross-region/ping-target.sh --source-region ${SOURCE_REGION} --target-region ${TARGET_REGION} --target-ip ${TARGET_IP_ADDRESS} --test-uuid ${TEST_EXECUTION_UUID} --s3-bucket ${S3_BUCKET_NAME}"] \
+        --region "${SOURCE_REGION}" > /dev/null ; then
         >&2 echo "ERROR: failed to send command to = ${SOURCE_INSTANCE_ID}"
       fi
 

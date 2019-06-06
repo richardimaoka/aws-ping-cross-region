@@ -3,4 +3,6 @@ yum update -y
 yum -y install git
 cd /home/ec2-user
 git clone https://github.com/richardimaoka/aws-ping-cross-region
+cd aws-ping-cross-region
+git submodule update --init --recursive
 yum -y install jq
