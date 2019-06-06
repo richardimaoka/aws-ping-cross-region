@@ -54,7 +54,7 @@ do
     if [ "${SOURCE_REGION}" != "${TARGET_REGION}" ]; then
       echo "testing ping from the source region=${SOURCE_REGION} to the target region=${TARGET_REGION}"
   
-      if ! EC2_OUTPUT=$(echo "${EC2_INPUT_JSON}" | ./create-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}") ; then
+      if ! EC2_OUTPUT=$(echo "${EC2_INPUT_JSON}" | ./run-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}") ; then
         exit 1
       fi
 
