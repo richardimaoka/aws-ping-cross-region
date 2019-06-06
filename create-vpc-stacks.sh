@@ -69,7 +69,7 @@ for REGION1 in ${REGIONS}
 do
   for REGION2 in ${REGIONS}
   do
-    if [ "${ACCEPTER_REGION}" != "${REQUESTER_REGION}" ] ; then
+    if [ "${REGION1}" != "${REGION2}" ] ; then
       ./create-vpc-peering.sh \
         --aws-account "${AWS_ACCOUNT_ID}" \
         --stack-name "${STACK_NAME}" \
