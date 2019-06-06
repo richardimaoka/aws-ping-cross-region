@@ -24,7 +24,7 @@ SSH_LOCATION="$(curl ifconfig.co 2> /dev/null)/32"
 ################################
 # Step 1: Create the VPCs
 ################################
-for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" | jq -r '.[]')
+for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
 do 
   if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" > /dev/null 2>&1; then
     echo "Creating a CloudFormation stack=${STACK_NAME} for region=${REGION}"
@@ -32,7 +32,7 @@ do
     # If it fails, an error message is displayed and it continues to the next REGION
     aws cloudformation create-stack \
       --stack-name "${STACK_NAME}" \
-      --template-body file://cloudformation-vpc-main.yaml \
+      --template-body file://cloudformation-vpc.yaml \
       --capabilities CAPABILITY_NAMED_IAM \
       --parameters ParameterKey=SSHLocation,ParameterValue="${SSH_LOCATION}" \
                     ParameterKey=AWSAccountId,ParameterValue="${AWS_ACCOUNT_ID}" \
