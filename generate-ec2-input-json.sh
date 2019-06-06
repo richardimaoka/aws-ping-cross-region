@@ -2,7 +2,7 @@
 
 STACK_NAME="PingCrossRegionExperiment"
 
-FILE_NAME=$(tmpfile)
+FILE_NAME=$(tempfile)
 
 # Start of JSON
 echo "{" >> "${FILE_NAME}"
@@ -41,4 +41,4 @@ echo "}" >> "${FILE_NAME}"
 
 jq -s '.[0] * .[1]' "${FILE_NAME}" instance-types.json
 
-
+rm "${FILE_NAME}"
