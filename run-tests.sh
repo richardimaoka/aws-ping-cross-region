@@ -82,7 +82,7 @@ do
         --instance-ids "${SOURCE_INSTANCE_ID}" \
         --document-name "AWS-RunShellScript" \
         --comment "aws-ping command to run ping to all relevant EC2 instances in all the regions" \
-        --parameters commands=["/home/ec2-user/aws-ping-cross-region/ping-target.sh --source-region ${SOURCE_REGION} --target-region ${TARGET_REGION} --target-ip ${TARGET_IP_ADDRESS} --test-uuid ${TEST_EXECUTION_UUID}" --s3-bucket "${S3_BUCKET_NAME }"] \
+        --parameters commands=["/home/ec2-user/aws-ping-cross-region/ping-target.sh --source-region ${SOURCE_REGION} --target-region ${TARGET_REGION} --target-ip ${TARGET_IP_ADDRESS} --test-uuid ${TEST_EXECUTION_UUID}" --s3-bucket "${S3_BUCKET_NAME}"] \
         --output text \
         --query "Command.CommandId" > /dev/null ; then
         >&2 echo "ERROR: failed to send command to = ${SOURCE_INSTANCE_ID}"
@@ -95,13 +95,21 @@ do
       ######################################################
       # 2.3 Terminate the EC2 instances
       ######################################################
-      echo "Bring down the EC2 instances"
-      if ! aws ec2 "${TARGET_INSTANCE_ID}" --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
+      echo "Terminate the EC2 instances"
+      if ! aws ec2 terminate-instances --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
         >&2 echo "ERROR: failed terminate the source EC2 instance = ${SOURCE_INSTANCE_ID}"
         exit 1
       fi
-      if ! aws ec2 wait instance-status-ok --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" ; then
-        >&2 echo "ERROR: failed to wait on the target EC2 instance = ${SOURCE_INSTANCE_ID}"
+      if ! aws ec2 terminate-instances --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" ; then
+        >&2 echo "ERROR: failed terminate the target EC2 instance = ${TARGET_INSTANCE_ID}"
+        exit 1
+      fi
+      if ! aws ec2 wait instance-terminated --instance-ids "$SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
+        >&2 echo "ERROR: failed to wait on the termination of the EC2 instance = ${SOURCE_INSTANCE_ID}"
+        exit 1
+      fi
+      if ! aws ec2 wait instance-terminated --instance-ids "${TARGET_INSTANCE_ID}" --region "${TARGET_REGION}" ; then
+        >&2 echo "ERROR: failed to wait  on the termination of the EC2 instance = ${SOURCE_INSTANCE_ID}"
         exit 1
       fi
     fi
