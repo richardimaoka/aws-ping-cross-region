@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# cd to the current directory as it runs other shell scripts
+cd "$(dirname "$0")" || exit
+
 for OPT in "$@"
 do
   case "$OPT" in
@@ -18,10 +21,7 @@ if [ -z "${STACK_NAME}" ] ; then
   exit 1
 fi
 
-# cd to the current directory as it runs other shell scripts
-cd "$(dirname "$0")" || exit
-
-AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)" \
+AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 SSH_LOCATION="$(curl ifconfig.co 2> /dev/null)/32"
 
 REGIONS=$(aws ec2 describe-regions --query "Regions[].RegionName" --output text)

@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# cd to the current directory as it runs other shell scripts
+cd "$(dirname "$0")" || exit
+
 STACK_NAME="PingCrossRegionExperiment"
 
 FILE_NAME=$(tempfile)

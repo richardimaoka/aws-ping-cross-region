@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# cd to the current directory as it runs other shell scripts
+cd "$(dirname "$0")" || exit
+
 for OPT in "$@"
 do
   case "$OPT" in

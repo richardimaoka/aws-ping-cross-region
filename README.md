@@ -130,3 +130,24 @@ us-east-1
 us-east-2
 us-west-1
 us-west-2
+
+## update stack
+
+for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
+do 
+  if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" > /dev/null 2>&1; then
+    echo "Creating a CloudFormation stack=${STACK_NAME} for region=${REGION}"
+
+    # If it fails, an error message is displayed and it continues to the next REGION
+    aws cloudformation create-stack \
+      --stack-name "${STACK_NAME}" \
+      --template-body file://cloudformation-vpc.yaml \
+      --capabilities CAPABILITY_NAMED_IAM \
+      --parameters ParameterKey=SSHLocation,ParameterValue="${SSH_LOCATION}" \
+                    ParameterKey=AWSAccountId,ParameterValue="${AWS_ACCOUNT_ID}" \
+      --region "${REGION}" \
+      --output text
+  else
+    echo "Cloudformatoin stack in ${REGION} already exists"
+  fi
+done 
