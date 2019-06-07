@@ -9,6 +9,14 @@ cd "$(dirname "$0")" || exit
 for OPT in "$@"
 do
   case "$OPT" in
+    '--stack-name' )
+      if [ -z "$2" ]; then
+          echo "option --stack-name requires an argument -- $1" 1>&2
+          exit 1
+      fi
+      STACK_NAME="$2"
+      shift 2
+      ;;
     '--source-region' )
       if [ -z "$2" ]; then
           echo "option --source-region requires an argument -- $1" 1>&2
@@ -39,6 +47,10 @@ done
 ######################################
 # Validate options
 ######################################
+if [ -z "${STACK_NAME}" ] ; then
+  >&2 echo "ERROR: option --stack-name needs to be passed"
+  ERROR="1"
+fi
 if [ -z "${SOURCE_REGION}" ] ; then
   >&2 echo "ERROR: option --source-region needs to be passed"
   ERROR="1"
@@ -83,7 +95,7 @@ if ! SOURCE_OUTPUTS=$(aws ec2 run-instances \
   --network-interfaces \
     "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${SOURCE_SECURITY_GROUP_ID},SubnetId=${SOURCE_SUBNET_ID}" \
   --tag-specifications \
-    "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
+    "ResourceType=instance,Tags=[{Key=experiment-name,Value=${STACK_NAME}}]" \
   --user-data file://user-data.txt \
   --region "${SOURCE_REGION}"
 ) ; then
@@ -108,7 +120,7 @@ if ! TARGET_OUTPUTS=$(aws ec2 run-instances \
   --network-interfaces \
     "AssociatePublicIpAddress=true,DeviceIndex=0,Groups=${TARGET_SECURITY_GROUP_ID},SubnetId=${TARGET_SUBNET_ID}" \
   --tag-specifications \
-    "ResourceType=instance,Tags=[{Key=experiment-name,Value=aws-ping-cross-region}]" \
+    "ResourceType=instance,Tags=[{Key=experiment-name,Value=${STACK_NAME}}]" \
   --user-data file://user-data.txt \
   --region "${TARGET_REGION}"
 ) ; then
