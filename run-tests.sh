@@ -8,6 +8,14 @@ S3_BUCKET_NAME="samplebucket-richardimaoka-sample-sample"
 for OPT in "$@"
 do
     case "$OPT" in
+      '--stack-name' )
+        if [ -z "$2" ]; then
+            echo "option --stack-name requires an argument -- $1" 1>&2
+            exit 1
+        fi
+        STACK_NAME="$2"
+        shift 2
+        ;;
       '--s3-bucket' )
         if [ -z "$2" ]; then
             echo "option --s3-bucket requires an argument -- $1" 1>&2
@@ -30,16 +38,23 @@ done
 #################################
 # 1. Prepare the input json
 #################################
+if [ -z "${STACK_NAME}" ] ; then
+  >&2 echo "ERROR: option --stack-name needs to be passed"
+  ERROR="1"
+fi
 if [ -z "${FILE_NAME}" ] ; then
   if ! EC2_INPUT_JSON=$(./generate-ec2-input-json.sh); then 
     >&2 echo "ERROR: Failed to generate the input json with ./generate-ec2-input-json.sh"
-    exit 1
+    ERROR="1"
   fi
 else
   if ! EC2_INPUT_JSON=$(jq -r "." < "${FILE_NAME}"); then
     >&2 echo "ERROR: Failed to read input JSON from ${FILE_NAME}"
-    exit 1
+    ERROR="1"
   fi
+fi
+if [ -n "${ERROR}" ] ; then
+  exit 1
 fi
 
 ######################################################
@@ -57,7 +72,7 @@ do
       # 2.1 Run the EC2 instances and wait
       ######################################################
       echo "Running the EC2 instances in the source region=${SOURCE_REGION} and the target region=${TARGET_REGION}" 
-      if ! EC2_OUTPUT=$(echo "${EC2_INPUT_JSON}" | ./run-ec2-instance.sh --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}") ; then
+      if ! EC2_OUTPUT=$(echo "${EC2_INPUT_JSON}" | ./run-ec2-instance.sh --stack-name ${STACK_NAME} --source-region "${SOURCE_REGION}" --target-region "${TARGET_REGION}") ; then
         exit 1
       fi
 
