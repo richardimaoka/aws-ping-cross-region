@@ -113,5 +113,4 @@ do
       fi
     fi
   done
-  break
 done
