@@ -34,7 +34,7 @@ do
   ################################
   # Step 1.1: Create if not exist
   ################################
-  if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" 2> /dev/null ; then
+  if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" 1&2> /dev/null ; then
     echo "Creating a CloudFormation stack=${STACK_NAME} for region=${REGION}"
     # If it fails, an error message is displayed and it continues to the next REGION
     aws cloudformation create-stack \
