@@ -31,6 +31,7 @@ do
   for CIDR_BLOCK in $(aws ec2 describe-route-tables \
     --route-table-ids "${ROUTE_TABLE}"\
     --query "RouteTables[].Routes[?VpcPeeringConnectionId].DestinationCidrBlock" \
+    --output text \
     --region "${REGION}"
   )
   do
