@@ -134,7 +134,6 @@ if ! TARGET_OUTPUTS=$(aws ec2 run-instances \
 fi
 
 SOURCE_INSTANCE_ID=$(echo "${SOURCE_OUTPUTS}" | jq -r ".Instances[].InstanceId")
-SOURCE_PRIVATE_IP=$(echo "${SOURCE_OUTPUTS}" | jq -r ".Instances[].NetworkInterfaces[].PrivateIpAddress")
 TARGET_INSTANCE_ID=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].InstanceId")
 TARGET_PRIVATE_IP=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].NetworkInterfaces[].PrivateIpAddress")
 
@@ -156,7 +155,7 @@ fi
 echo "Sending command to the source EC"
 COMMANDS="/home/ec2-user/aws-iperf-cross-region/ping-target.sh"
 COMMANDS="${COMMANDS} --target-region ${TARGET_REGION}"
-COMMANDS="${COMMANDS} --target-ip ${TARGET_IP_ADDRESS}"
+COMMANDS="${COMMANDS} --target-ip ${TARGET_PRIVATE_IP}"
 COMMANDS="${COMMANDS} --target-instance ${TARGET_INSTANCE_ID}"
 COMMANDS="${COMMANDS} --test-uuid ${TEST_EXECUTION_UUID}"
 COMMANDS="${COMMANDS} --s3-bucket ${S3_BUCKET_NAME}"
@@ -167,7 +166,6 @@ if ! aws ssm send-command \
   --parameters commands=["${COMMANDS}"] \
   --region "${SOURCE_REGION}" > /dev/null ; then
   >&2 echo "ERROR: failed to send command to = ${SOURCE_INSTANCE_ID}"
-  exit 1
 fi
 
 # No easy way to signal the end of the command, so sleep to wait enough 
