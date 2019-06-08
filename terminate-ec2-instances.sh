@@ -27,5 +27,5 @@ do
     --output text \
     --region "${REGION}"
   )
-  aws ec2 terminate-instance --instance-ids "${INSTANCE_IDS}"  
+  aws ec2 terminate-instance --instance-ids "${INSTANCE_IDS}" --region "${REGION}"
 done
