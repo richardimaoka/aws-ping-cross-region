@@ -23,7 +23,7 @@ do
   echo "Terminating the EC2 instance in ${REGION}"
   for INSTANCE_ID in $(aws ec2 describe-instances \
     --filters "Name=tag:experiment-name,Values=${STACK_NAME}" \
-    --query "Reservations[*].Instances[*].InstanceId" \
+    --query "Reservations[*].Instances[?State.Name!='terminated'].InstanceId" \
     --output text \
     --region "${REGION}"
   )
