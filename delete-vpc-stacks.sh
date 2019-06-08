@@ -20,11 +20,11 @@ fi
 
 REGIONS=$(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
 
-#######################################################
-# Step 1: Delete Routes for VPC Peering in route tables
-#######################################################
 for REGION in ${REGIONS}
 do
+  #######################################################
+  # Step 1: Delete Routes for VPC Peering in route tables
+  #######################################################
   echo "Deleting VPC-peering routes in ${REGION}s route table"
   ROUTE_TABLE=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='RouteTable'].OutputValue" --output text --region "${REGION}")
   
@@ -36,15 +36,12 @@ do
   )
   do
     echo "Deleting Route destinated to "${CIDR_BLOCK}" from ${ROUTE_TABLE}"
-    aws ec2 delete-route --route-table-id "${ROUTE_TABLE}" --destination-cidr-block "${CIDR_BLOCK}"
+    aws ec2 delete-route --route-table-id "${ROUTE_TABLE}" --destination-cidr-block "${CIDR_BLOCK}"--region "${REGION}"
   done
-done
 
-###################################################
-# Step 2: Delete VPC Peering
-###################################################
-for REGION in ${REGIONS}
-do 
+  ###################################################
+  # Step 2: Delete VPC Peering
+  ###################################################
   VPC_ID=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --query "Stacks[].Outputs[?OutputKey=='VPCId'].OutputValue" --output text --region "${REGION}")
   VPC_CONNECTIONS=$(aws ec2 describe-vpc-peering-connections --region "${REGION}")
   
@@ -53,13 +50,10 @@ do
     echo "Deleting ${VPC_PEERING_ID}"
     aws ec2 delete-vpc-peering-connection --vpc-peering-connection-id "${VPC_PEERING_ID}" --region "${REGION}"
   done
-done 
 
-###################################################
-# Step 3: Delete CloudFormation VPC Stacks
-###################################################
-for REGION in ${REGIONS}
-do 
+  ###################################################
+  # Step 3: Delete CloudFormation VPC Stacks
+  ###################################################
   echo "Deleting the CloudFormation stack=${STACK_NAME} for region=${REGION} if exists."
   aws cloudformation delete-stack --stack-name "${STACK_NAME}" --region "${REGION}"
 done 

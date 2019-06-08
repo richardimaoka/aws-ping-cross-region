@@ -1,6 +1,7 @@
 #!/bin/bash
-yum update -y
+yum -y install jq
 yum -y install git
+yum update -y
+
 cd /home/ec2-user
 git clone --recurse-submodules https://github.com/richardimaoka/aws-ping-cross-region
-yum -y install jq
