@@ -152,7 +152,7 @@ TARGET_PRIVATE_IP=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].NetworkInterf
 ##############################################
 # 2.3. Wait for the EC2 instances to be ready
 ##############################################
-# echo "Waiting for the EC2 instances to be status = ok: source = ${SOURCE_INSTANCE_ID} and target = ${TARGET_INSTANCE_ID}"
+echo "Waiting for the EC2 instances to be status = ok: source = ${SOURCE_INSTANCE_ID} and target = ${TARGET_INSTANCE_ID}"
 if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
   >&2 echo "ERROR: failed to wait on the source EC2 instance = ${SOURCE_INSTANCE_ID}"
   exit 1
@@ -164,8 +164,8 @@ fi
 ######################################################
 # 3 Send the command and sleep to wait
 ######################################################
-# echo "Sending command to the source EC"
-COMMANDS="/home/ec2-user/aws-iperf-cross-region/ping-target.sh"
+echo "Sending command to the source EC2=${SOURCE_INSTANCE_ID}(${SOURCE_REGION})"
+COMMANDS="/home/ec2-user/aws-ping-cross-region/ping-target.sh"
 COMMANDS="${COMMANDS} --target-region ${TARGET_REGION}"
 COMMANDS="${COMMANDS} --target-ip ${TARGET_PRIVATE_IP}"
 COMMANDS="${COMMANDS} --target-instance ${TARGET_INSTANCE_ID}"
@@ -174,7 +174,7 @@ COMMANDS="${COMMANDS} --s3-bucket ${S3_BUCKET_NAME}"
 if ! aws ssm send-command \
   --instance-ids "${SOURCE_INSTANCE_ID}" \
   --document-name "AWS-RunShellScript" \
-  --comment "aws-iperf command to run ping to all relevant EC2 instances in all the regions" \
+  --comment "aws-ping command to run ping to all relevant EC2 instances in all the regions" \
   --parameters commands=["${COMMANDS}"] \
   --region "${SOURCE_REGION}" > /dev/null ; then
   >&2 echo "ERROR: failed to send command to = ${SOURCE_INSTANCE_ID}"
@@ -186,7 +186,7 @@ sleep 90s
 ######################################################
 # 4.3 Terminate the EC2 instances
 ######################################################
-# echo "Terminate the EC2 instances"
+echo "Terminate the EC2 instances source=${SOURCE_INSTANCE_ID}(${SOURCE_REGION}) target=${TARGET_INSTANCE_ID}(${TARGET_REGION})"
 if ! aws ec2 terminate-instances --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" > /dev/null ; then
   >&2 echo "ERROR: failed terminate the source EC2 instance = ${SOURCE_INSTANCE_ID}"
   exit 1

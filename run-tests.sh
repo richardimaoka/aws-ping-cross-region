@@ -98,8 +98,6 @@ do
   SOURCE_REGION=$(echo "${PICKED_UP}" | awk '{print $1}')
   TARGET_REGION=$(echo "${PICKED_UP}" | awk '{print $2}')
 
-  echo "PAIR: ${SOURCE_REGION} ${TARGET_REGION}"
-
   SOURCE_INSTANCE_ID=$(aws ec2 describe-instances \
     --filters "Name=tag:experiment-name,Values=${STACK_NAME}" \
     --query "Reservations[*].Instances[?State.Name!='terminated'].InstanceId" \
@@ -114,7 +112,8 @@ do
   )
 
   if [ -z "${SOURCE_INSTANCE_ID}" ] && [ -z "${TARGET_INSTANCE_ID}" ] ; then
-    echo "Running the EC2 instances in the source region=${SOURCE_REGION} and the target region=${TARGET_REGION}" 
+    REMAINING=$(echo "${REGION_PAIRS}" | wc -l)
+    echo "(${REMAINING})Running the EC2 instances in the source region=${SOURCE_REGION} and the target region=${TARGET_REGION}" 
     ######################################################
     # Run in the background as it takes time, so that
     # the next iteration can be started without waiting
@@ -134,13 +133,14 @@ do
     REGION_PAIRS=$(echo "${REGION_PAIRS}" | grep -v "${PICKED_UP}")
     sleep 5s # To let EC2 be captured the by describe-instances commands in the next iteration
 
-  elif [ -n "${SOURCE_INSTANCE_ID}" ] && [ -z "${TARGET_INSTANCE_ID}" ] ; then
-    echo "${SOURCE_REGION} has EC2 running. So try again in the next iteration"
-  elif [ -z "${SOURCE_INSTANCE_ID}" ] && [ -n "${TARGET_INSTANCE_ID}" ] ; then
-    echo "${TARGET_REGION} has EC2 running. So try again in the next iteration"
-  elif [ -n "${SOURCE_INSTANCE_ID}" ] && [ -n "${TARGET_INSTANCE_ID}" ] ; then
-    echo "Both ${SOURCE_REGION} has EC2 running. So try again in the next iteration"
-  else
-    echo "WAZZUP!??"
+  # elif [ -n "${SOURCE_INSTANCE_ID}" ] && [ -z "${TARGET_INSTANCE_ID}" ] ; then
+  #   echo "${SOURCE_REGION} has EC2 running. So try again in the next iteration"
+  # elif [ -z "${SOURCE_INSTANCE_ID}" ] && [ -n "${TARGET_INSTANCE_ID}" ] ; then
+  #   echo "${TARGET_REGION} has EC2 running. So try again in the next iteration"
+  # elif [ -n "${SOURCE_INSTANCE_ID}" ] && [ -n "${TARGET_INSTANCE_ID}" ] ; then
+  #   echo "Both ${SOURCE_REGION} and ${TARGET_INSTANCE_ID} has EC2 running. So try again in the next iteration"
+  # else
+  #   echo "WAZZUP!??"
+
   fi
 done
