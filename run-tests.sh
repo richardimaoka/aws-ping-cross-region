@@ -76,7 +76,7 @@ do
   REGIONS_INNER_LOOP=$(echo "${REGIONS_INNER_LOOP}" | grep -v "${REGION1}")
   for REGION2 in $REGIONS_INNER_LOOP
   do
-    echo "${REGION1} ${REGION2}" >> "${FILENAME}"
+    echo "${REGION1} ${REGION2}" >> "${TEMPFILE}"
   done
 done
 
