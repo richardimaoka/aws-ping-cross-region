@@ -29,6 +29,6 @@ do
   )
   do
     echo "Terminating ${INSTANCE_ID}"
-    aws ec2 terminate-instances --instance-ids "${INSTANCE_ID}" --region "${REGION}"
+    aws ec2 terminate-instances --instance-ids "${INSTANCE_ID}" --region "${REGION}" >/dev/null
   done
 done
