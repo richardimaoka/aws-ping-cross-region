@@ -3,6 +3,13 @@
 # cd to the current directory as it runs other shell scripts
 cd "$(dirname "$0")" || exit
 
+############################################################
+# Kill the child (background) processes on Ctrl+C = (SIG)INT
+############################################################
+# This script runs run-ec2-instance.sh in the background
+# https://superuser.com/questions/543915/whats-a-reliable-technique-for-killing-background-processes-on-script-terminati/562804
+trap 'kill -- -$$' INT
+
 TEST_EXECUTION_UUID=$(uuidgen)
 S3_BUCKET_NAME="samplebucket-richardimaoka-sample-sample"
 for OPT in "$@"
@@ -123,7 +130,7 @@ do
     ######################################################
     REGION_PAIRS=$(echo "${REGION_PAIRS}" | grep -v "${PICKED_UP}")
     echo "Sleeping 5s"
-    sleep 5s # To let EC2 be captured the by describe-instances commands
+    sleep 5s # To let EC2 be captured the by describe-instances commands in the next iteration
   else
     echo "Either ${SOURCE_REGION} and/or ${TARGET_REGION} has EC2 running. So try again in the next iteration"
   fi
