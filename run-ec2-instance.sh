@@ -41,6 +41,14 @@ do
       TEST_EXECUTION_UUID="$2"
       shift 2
       ;;
+    '--s3-bucket' )
+        if [ -z "$2" ]; then
+            echo "option --s3-bucket requires an argument -- $1" 1>&2
+            exit 1
+        fi
+        S3_BUCKET_NAME="$2"
+        shift 2
+        ;;      
     '-f' | '--file-name' )
       if [ -z "$2" ]; then
           echo "option -f or --file-name requires an argument -- $1" 1>&2
@@ -65,6 +73,10 @@ if [ -z "${SOURCE_REGION}" ] ; then
 fi
 if [ -z "${TARGET_REGION}" ] ; then
   >&2 echo "ERROR: option --target-region needs to be passed"
+  ERROR="1"
+fi
+if [ -z "${S3_BUCKET_NAME}" ] ; then
+  >&2 echo "ERROR: option --s3-bucket needs to be passed"
   ERROR="1"
 fi
 

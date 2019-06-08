@@ -87,21 +87,40 @@ done
 # REGION_PAIRS will remove the picked-up element at the end of an iteration
 while PICKED_UP=$(echo "${REGION_PAIRS}" | shuf -n 1) && [ -n "${PICKED_UP}" ]
 do
-  SORUCE_REGION=$(echo "${PICKED_UP}" | awk '{print $1}')
+  SOURCE_REGION=$(echo "${PICKED_UP}" | awk '{print $1}')
   TARGET_REGION=$(echo "${PICKED_UP}" | awk '{print $2}')
 
-  echo "Running the EC2 instances in the source region=${SOURCE_REGION} and the target region=${TARGET_REGION}" 
-  # Run this in background, so that the next iteration can be started without waiting
-  (echo "${EC2_INPUT_JSON}" | \
-    ./run-ec2-instance.sh \
-      --stack-name ${STACK_NAME} \
-      --source-region "${SOURCE_REGION}" \
-      --target-region "${TARGET_REGION}" \
-      --test-uuid "${TEST_EXECUTION_UUID}"
-  ) &
+  echo "PAIR: ${SOURCE_REGION} ${TARGET_REGION}"
 
-  ######################################################
-  # For the next iteration
-  ######################################################
-  REGION_PAIRS=$(echo "${REGION_PAIRS}" | grep -v "${PICKED_UP}")
+  SOURCE_INSTANCE_ID=$(aws ec2 describe-instances \
+    --filters "Name=tag:experiment-name,Values=${STACK_NAME}" \
+    --query "Reservations[*].Instances[*].InstanceId" \
+    --output text \
+    --region "${SOURCE_REGION}"
+  )
+  TARGET_INSTANCE_ID=$(aws ec2 describe-instances \
+    --filters "Name=tag:experiment-name,Values=${STACK_NAME}" \
+    --query "Reservations[*].Instances[*].InstanceId" \
+    --output text \
+    --region "${TARGET_REGION}"
+  )
+
+  if [ -z "${SOURCE_INSTANCE_ID}" ] && [ -z "${TARGET_INSTANCE_ID}" ] ; then
+    echo "Running the EC2 instances in the source region=${SOURCE_REGION} and the target region=${TARGET_REGION}" 
+    # Run this in background, so that the next iteration can be started without waiting
+    (echo "${EC2_INPUT_JSON}" | \
+      ./run-ec2-instance.sh \
+        --stack-name "${STACK_NAME}" \
+        --source-region "${SOURCE_REGION}" \
+        --target-region "${TARGET_REGION}" \
+        --test-uuid "${TEST_EXECUTION_UUID}" \
+        --s3-bucket "${S3_BUCKET_NAME}"
+    ) &
+
+    ######################################################
+    # For the next iteration
+    ######################################################
+    REGION_PAIRS=$(echo "${REGION_PAIRS}" | grep -v "${PICKED_UP}")
+    sleep 5s # To let EC2 be captured the by describe-instances commands
+  fi
 done
