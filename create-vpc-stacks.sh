@@ -34,10 +34,10 @@ do
   ################################
   # Step 1.1: Create if not exist
   ################################
-  if ! STACK_INFO=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" 2> /dev/null) ; then
+  if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" 2> /dev/null ; then
     echo "Creating a CloudFormation stack=${STACK_NAME} for region=${REGION}"
     # If it fails, an error message is displayed and it continues to the next REGION
-    STACK_INFO=$(aws cloudformation create-stack \
+    aws cloudformation create-stack \
       --stack-name "${STACK_NAME}" \
       --template-body file://cloudformation-vpc.yaml \
       --capabilities CAPABILITY_NAMED_IAM \
@@ -45,21 +45,16 @@ do
                     ParameterKey=AWSAccountId,ParameterValue="${AWS_ACCOUNT_ID}" \
       --region "${REGION}" \
       --output text
-    )
   fi
 
   #################################
-  # Step 1.1: Wait until it's ready
+  # Step 1.2: Wait until it's ready
   #################################
-  if [ "CREATE_COMPLETE" = "$(echo "${STACK_INFO}" | jq -r '.Stacks[].StackStatus')" ] ; then
-    echo "Cloudformatoin stack in ${REGION} already exists"
-  else
-    echo "Waiting until the CloudFormation stack is CREATE_COMPLETE for ${REGION}"
-    if ! aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME}" --region "${REGION}"; then
-      >&2 echo "ERROR: CloudFormation wait failed for ${REGION}"
-      exit 1
-    fi    
-  fi
+  echo "Waiting until the CloudFormation stack is CREATE_COMPLETE or UPDATE_COMPLETE for ${REGION}"
+  if ! aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME}" --region "${REGION}"; then
+    >&2 echo "ERROR: CloudFormation wait failed for ${REGION}"
+    exit 1
+  fi    
 done 
 
 ################################################
