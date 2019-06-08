@@ -51,7 +51,7 @@ do
   #################################
   # Step 1.1: Wait until it's ready
   #################################
-  if [ "CREATE_COMPLETED" = "$(echo "${STACK_INFO}" | jq -r '.Stacks[].StackStatus')" ] ; then
+  if [ "CREATE_COMPLETE" = "$(echo "${STACK_INFO}" | jq -r '.Stacks[].StackStatus')" ] ; then
     echo "Cloudformatoin stack in ${REGION} already exists"
   else
     echo "Waiting until the CloudFormation stack is CREATE_COMPLETE for ${REGION}"
