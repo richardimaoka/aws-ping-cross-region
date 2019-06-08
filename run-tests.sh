@@ -115,7 +115,10 @@ do
 
   if [ -z "${SOURCE_INSTANCE_ID}" ] && [ -z "${TARGET_INSTANCE_ID}" ] ; then
     echo "Running the EC2 instances in the source region=${SOURCE_REGION} and the target region=${TARGET_REGION}" 
-    # Run this in background, so that the next iteration can be started without waiting
+    ######################################################
+    # Run in the background as it takes time, so that
+    # the next iteration can be started without waiting
+    ######################################################
     (echo "${EC2_INPUT_JSON}" | \
       ./run-ec2-instance.sh \
         --stack-name "${STACK_NAME}" \
@@ -129,9 +132,15 @@ do
     # For the next iteration
     ######################################################
     REGION_PAIRS=$(echo "${REGION_PAIRS}" | grep -v "${PICKED_UP}")
-    echo "Sleeping 5s"
     sleep 5s # To let EC2 be captured the by describe-instances commands in the next iteration
+
+  elif [ -n "${SOURCE_INSTANCE_ID}" ] && [ -z "${TARGET_INSTANCE_ID}" ] ; then
+    echo "${SOURCE_REGION} has EC2 running. So try again in the next iteration"
+  elif [ -z "${SOURCE_INSTANCE_ID}" ] && [ -n "${TARGET_INSTANCE_ID}" ] ; then
+    echo "${TARGET_REGION} has EC2 running. So try again in the next iteration"
+  elif [ -n "${SOURCE_INSTANCE_ID}" ] && [ -n "${TARGET_INSTANCE_ID}" ] ; then
+    echo "Both ${SOURCE_REGION} has EC2 running. So try again in the next iteration"
   else
-    echo "Either ${SOURCE_REGION} and/or ${TARGET_REGION} has EC2 running. So try again in the next iteration"
+    echo "WAZZUP!??"
   fi
 done
