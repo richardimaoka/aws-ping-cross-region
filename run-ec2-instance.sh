@@ -152,7 +152,7 @@ TARGET_PRIVATE_IP=$(echo "${TARGET_OUTPUTS}" | jq -r ".Instances[].NetworkInterf
 ##############################################
 # 2.3. Wait for the EC2 instances to be ready
 ##############################################
-echo "Waiting for the EC2 instances to be status = ok: source = ${SOURCE_INSTANCE_ID} and target = ${TARGET_INSTANCE_ID}"
+echo "Waiting for the EC2 instances to be status = ok: source = ${SOURCE_INSTANCE_ID}(${SOURCE_REGION}) and target = ${TARGET_INSTANCE_ID}(${TARGET_REGION})"
 if ! aws ec2 wait instance-status-ok --instance-ids "${SOURCE_INSTANCE_ID}" --region "${SOURCE_REGION}" ; then
   >&2 echo "ERROR: failed to wait on the source EC2 instance = ${SOURCE_INSTANCE_ID}"
   exit 1
