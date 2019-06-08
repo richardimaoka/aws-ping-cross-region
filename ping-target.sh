@@ -101,7 +101,7 @@ echo "Start pinging the target, and saving to a file, ping_result.json"
 ping -c 30 "${TARGET_IP}" | ping-to-json/ping_to_json.sh > ping_result.json
 
 echo "Saving the metadata to a file, ping_metadata.json"
-echo "{ \"metadata\": {\"source_region\": \"${SOURCE_REGION}\", \"target_region\": \"${TARGET_REGION}\", \"test_uuid\": \"${TEST_EXECUTION_UUID}\"  } }" | ping_metadata.json
+echo "{ \"metadata\": {\"source_region\": \"${SOURCE_REGION}\", \"target_region\": \"${TARGET_REGION}\", \"test_uuid\": \"${TEST_EXECUTION_UUID}\"  } }" > ping_metadata.json
 
 #######################################################
 # Step 3: Merge the json files and upload to S3
