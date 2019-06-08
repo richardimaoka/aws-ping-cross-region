@@ -3,7 +3,6 @@
 # cd to the current directory as it runs other shell scripts
 cd "$(dirname "$0")" || exit
 
-STACK_NAME="IperfCrossRegionExperiment"
 TEST_EXECUTION_UUID=$(uuidgen)
 S3_BUCKET_NAME="samplebucket-richardimaoka-sample-sample"
 for OPT in "$@"
@@ -71,12 +70,13 @@ fi
 #   >...
 REGIONS=$(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
 REGIONS_INNER_LOOP=$(echo "${REGIONS}") # to avoid the same pair appear twice
+TEMPFILE=$(mktemp)
 for REGION1 in $REGIONS
 do
   REGIONS_INNER_LOOP=$(echo "${REGIONS_INNER_LOOP}" | grep -v "${REGION1}")
   for REGION2 in $REGIONS_INNER_LOOP
   do
-    REGION_PAIRS="${REMAINING_PAIRS}\n${REGION1} ${REGION2}"
+    echo "${REGION1} ${REGION2}" >> "${FILENAME}"
   done
 done
 
@@ -85,6 +85,7 @@ done
 ######################################################
 # Pick up one region pair at a time
 # REGION_PAIRS will remove the picked-up element at the end of an iteration
+REGION_PAIRS=$(cat "${TEMPFILE}")
 while PICKED_UP=$(echo "${REGION_PAIRS}" | shuf -n 1) && [ -n "${PICKED_UP}" ]
 do
   SOURCE_REGION=$(echo "${PICKED_UP}" | awk '{print $1}')

@@ -31,9 +31,8 @@ REGIONS=$(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
 ################################
 for REGION in ${REGIONS}
 do 
-  if ! aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" > /dev/null 2>&1; then
+  if ! STACK_INFO=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" 2> /dev/null) ; then
     echo "Creating a CloudFormation stack=${STACK_NAME} for region=${REGION}"
-
     # If it fails, an error message is displayed and it continues to the next REGION
     aws cloudformation create-stack \
       --stack-name "${STACK_NAME}" \
@@ -43,25 +42,19 @@ do
                     ParameterKey=AWSAccountId,ParameterValue="${AWS_ACCOUNT_ID}" \
       --region "${REGION}" \
       --output text
+  elif [ "CREATE_COMPLETED" != "$(echo "${STACK_INFO}" | jq -r '.Stacks[].StackStatus')" ] ; then
+    echo "Waiting until the CloudFormation stack is CREATE_COMPLETE for ${REGION}"
+    if ! aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME}" --region "${REGION}"; then
+      >&2 echo "ERROR: CloudFormation wait failed for ${REGION}"
+      exit 1
+    fi    
   else
     echo "Cloudformatoin stack in ${REGION} already exists"
   fi
 done 
 
-###################################################
-# Step 2: Wait on CloudFormation VPC stack creation
-###################################################
-for REGION in ${REGIONS}
-do
-  echo "Waiting until the CloudFormation stack is CREATE_COMPLETE for ${REGION}"
-  if ! aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME}" --region "${REGION}"; then
-    >&2 echo "ERROR: CloudFormation wait failed for ${REGION}"
-    exit 1
-  fi
-done
-
 ################################################
-# Step 3: Create VPC Peering in all the regions
+# Step 2: Create VPC Peering in all the regions
 ################################################
 AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 
