@@ -95,13 +95,13 @@ do
 
   SOURCE_INSTANCE_ID=$(aws ec2 describe-instances \
     --filters "Name=tag:experiment-name,Values=${STACK_NAME}" \
-    --query "Reservations[*].Instances[*].InstanceId" \
+    --query "Reservations[*].Instances[?State.Name!='terminated'].InstanceId" \
     --output text \
     --region "${SOURCE_REGION}"
   )
   TARGET_INSTANCE_ID=$(aws ec2 describe-instances \
     --filters "Name=tag:experiment-name,Values=${STACK_NAME}" \
-    --query "Reservations[*].Instances[*].InstanceId" \
+    --query "Reservations[*].Instances[?State.Name!='terminated'].InstanceId" \
     --output text \
     --region "${TARGET_REGION}"
   )
@@ -122,6 +122,9 @@ do
     # For the next iteration
     ######################################################
     REGION_PAIRS=$(echo "${REGION_PAIRS}" | grep -v "${PICKED_UP}")
+    echo "Sleeping 5s"
     sleep 5s # To let EC2 be captured the by describe-instances commands
+  else
+    echo "Either ${SOURCE_REGION} and/or ${TARGET_REGION} has EC2 running. So try again in the next iteration"
   fi
 done

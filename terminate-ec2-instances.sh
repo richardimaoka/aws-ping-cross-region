@@ -21,11 +21,11 @@ fi
 for REGION in $(aws ec2 describe-regions --query "Regions[].RegionName" --output text)
 do
   echo "Terminating the EC2 instance in ${REGION}"
-  INSTANCE_IDS=$(aws ec2 describe-instances \ 
+  INSTANCE_ID=$(aws ec2 describe-instances \
     --filters "Name=tag:experiment-name,Values=${STACK_NAME}" \
     --query "Reservations[*].Instances[*].InstanceId" \
     --output text \
     --region "${REGION}"
   )
-  aws ec2 terminate-instance --instance-ids "${INSTANCE_IDS}" --region "${REGION}"
+  aws ec2 terminate-instances --instance-ids "${INSTANCE_ID}" --region "${REGION}"
 done
