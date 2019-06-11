@@ -57,9 +57,13 @@ do
   fi    
 done 
 
-################################################
+##################################################################################
 # Step 2: Create VPC Peering in all the regions
-################################################
+#
+# The CloudFormation template of this repository does not define VPC Peering,
+# because of its complex requester-accepter dependencies. Instead, VPC Peering is
+# created by AWS CLI calls in create-vpc-peering.sh. See README.md for more detail.
+###################################################################################
 AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 
 for REGION1 in ${REGIONS}

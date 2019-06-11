@@ -1,5 +1,11 @@
 #!/bin/sh
 
+#######################################################################################
+# The CloudFormation template of this repository does not define VPC Peering,
+# because of its complex requester-accepter dependencies. Instead, VPC Peering is
+# created by AWS CLI calls in create-vpc-peering.sh. See README.md for more detail
+#######################################################################################
+
 for OPT in "$@"
 do
   case "$OPT" in
