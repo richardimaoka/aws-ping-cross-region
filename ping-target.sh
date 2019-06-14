@@ -25,14 +25,6 @@ do
       TARGET_IP="$2"
       shift 2
       ;;
-    '--target-instance' )
-      if [ -z "$2" ]; then
-          echo "option --target-instance requires an argument -- $1" 1>&2
-          exit 1
-      fi
-      TARGET_INSTANCE_ID="$2"
-      shift 2
-      ;;
     '--s3-bucket' )
       if [ -z "$2" ]; then
           echo "option --s3-bucket requires an argument -- $1" 1>&2
@@ -64,10 +56,6 @@ if [ -z "${TARGET_IP}" ] ; then
   echo "ERROR: Option --target-ip needs to be specified"
   ERROR="1"
 fi
-if [ -z "${TARGET_INSTANCE_ID}" ] ; then
-  echo "ERROR: Option --target-instance needs to be specified"
-  ERROR="1"
-fi
 if [ -z "${TEST_EXECUTION_UUID}" ] ; then
   echo "ERROR: Option --test-uuid needs to be specified"
   ERROR="1"
@@ -82,7 +70,6 @@ fi
 
 echo "TARGET_REGION=${TARGET_REGION}"
 echo "TARGET_IP=${TARGET_IP}"
-echo "TARGET_INSTANCE_ID=${TARGET_INSTANCE_ID}"
 echo "TEST_EXECUTION_UUID=${TEST_EXECUTION_UUID}"
 echo "S3_BUCKET_NAME=${S3_BUCKET_NAME}"
 

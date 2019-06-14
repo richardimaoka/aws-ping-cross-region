@@ -168,7 +168,6 @@ echo "Sending command to the source EC2=${SOURCE_INSTANCE_ID}(${SOURCE_REGION})"
 COMMANDS="/home/ec2-user/aws-ping-cross-region/ping-target.sh"
 COMMANDS="${COMMANDS} --target-region ${TARGET_REGION}"
 COMMANDS="${COMMANDS} --target-ip ${TARGET_PRIVATE_IP}"
-COMMANDS="${COMMANDS} --target-instance ${TARGET_INSTANCE_ID}"
 COMMANDS="${COMMANDS} --test-uuid ${TEST_EXECUTION_UUID}"
 COMMANDS="${COMMANDS} --s3-bucket ${S3_BUCKET_NAME}"
 if ! aws ssm send-command \

@@ -64,9 +64,9 @@ if [ -n "${ERROR}" ] ; then
   exit 1
 fi
 
-######################################################
-# 2. regions
-######################################################
+##############################################################
+# 2. Prepare REGION_PAIRS for efficient loop in the next step
+#############################################################
 # The $REGION_PAIRS variable to hold text like below, delimited by new lines, split by a whitespace:
 #   >ap-northeast-2 eu-west-2
 #   >ap-northeast-2 eu-west-1
@@ -76,23 +76,24 @@ fi
 #   >sa-east-1 eu-west-1
 #   >...
 REGIONS=$(aws ec2 describe-regions --query "Regions[].[RegionName]" --output text)
-REGIONS_INNER_LOOP=$(echo "${REGIONS}") # to avoid the same pair appear twice
+REGIONS_INNER_LOOP=$(echo "${REGIONS}")
 TEMPFILE=$(mktemp)
 for REGION1 in $REGIONS
 do
+  # to avoid the same pair appear twice
   REGIONS_INNER_LOOP=$(echo "${REGIONS_INNER_LOOP}" | grep -v "${REGION1}")
   for REGION2 in $REGIONS_INNER_LOOP
   do
     echo "${REGION1} ${REGION2}" >> "${TEMPFILE}"
   done
 done
+REGION_PAIRS=$(cat "${TEMPFILE}")
 
 ######################################################
 # 3. main loop
 ######################################################
 # Pick up one region pair at a time
 # REGION_PAIRS will remove the picked-up element at the end of an iteration
-REGION_PAIRS=$(cat "${TEMPFILE}")
 while PICKED_UP=$(echo "${REGION_PAIRS}" | shuf -n 1) && [ -n "${PICKED_UP}" ]
 do
   SOURCE_REGION=$(echo "${PICKED_UP}" | awk '{print $1}')
@@ -111,6 +112,7 @@ do
     --region "${TARGET_REGION}"
   )
 
+  # Run run-ec2-instance.sh only when both SOURCE_REGION and TARGET_REGION has no EC2 running
   if [ -z "${SOURCE_INSTANCE_ID}" ] && [ -z "${TARGET_INSTANCE_ID}" ] ; then
     REMAINING=$(echo "${REGION_PAIRS}" | wc -l)
     echo "(${REMAINING})Running the EC2 instances in the source region=${SOURCE_REGION} and the target region=${TARGET_REGION}" 
