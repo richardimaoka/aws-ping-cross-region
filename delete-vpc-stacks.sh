@@ -36,7 +36,8 @@ do
   )
   do
     echo "Deleting Route destinated to "${CIDR_BLOCK}" from ${ROUTE_TABLE}"
-    aws ec2 delete-route --route-table-id "${ROUTE_TABLE}" --destination-cidr-block "${CIDR_BLOCK}"--region "${REGION}"
+    echo "EXECUTE: aws ec2 delete-route --route-table-id ${ROUTE_TABLE} --destination-cidr-block ${CIDR_BLOCK} --region "${REGION}"
+    aws ec2 delete-route --route-table-id "${ROUTE_TABLE}" --destination-cidr-block "${CIDR_BLOCK}" --region "${REGION}"
   done
 
   ###################################################
